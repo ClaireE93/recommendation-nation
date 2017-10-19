@@ -6,7 +6,7 @@
 1. Make commits to your feature branch.
 1. When you've finished with your fix or feature, Rebase changes from master into your branch. Submit a pull request directly to master. Include a description of your changes.
 1. Your pull request will be reviewed by another team member. The point of code reviews is to help keep the codebase clean and of high quality and, equally as important, to help you grow as a programmer. If your code reviewer requests you make a change you don't understand, ask them why.
-1. Fix any issues raised by your code reviwer, and push your fixes as a single new commit.
+1. Fix any issues raised by your code reviewer, and push your fixes as a single new commit.
 1. Once the pull request has been reviewed, you may merge it.
 
 ## Detailed Workflow
@@ -28,7 +28,7 @@ These commands will help you do this:
 git checkout -b `your-branch-name`
 ```
 
-### Make commits to your feature branch. 
+### Make commits to your feature branch.
 
 Prefix each commit like so
   - (feat) Add a new feature
