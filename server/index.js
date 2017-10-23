@@ -3,6 +3,7 @@ const morgan = require('morgan');
 const bodyParser = require('body-parser');
 const Recommender = require('likely');
 const db = require('../db/purchases/index');
+const historic = require('../generators/historic');
 // const router = require('./routes');
 
 const app = express();
@@ -10,12 +11,13 @@ app.use(morgan('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-db.getAllUsers()
-  .then((results) => {
-    console.log('results are', results);
+
+historic.setup(10, 10, 3, 10)
+  .then(() => {
+    console.log('DONE with setup');
   })
   .catch((err) => {
-    throw err;
+    console.log('ERROR in setup', err);
   });
 
 

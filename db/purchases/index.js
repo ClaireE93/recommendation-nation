@@ -32,8 +32,8 @@ const addUser = user => (
   pool.query(`INSERT INTO users (user_id) VALUES ('${user}')`)
 );
 
-const addProduct = product => (
-  pool.query(`INSERT INTO products (product_id) VALUES ('${product}')`)
+const addProduct = (product, category) => (
+  pool.query(`INSERT INTO products (product_id, category) VALUES ('${product}', '${category}')`)
 );
 
 const addCategory = category => (
@@ -41,7 +41,7 @@ const addCategory = category => (
 );
 
 const addPurchase = (product, user, rating) => (
-  pool.query(`INSERT INTO purchases (product_id, user_id, rating) VALUES ('${product}', '${user}', '${rating}')`)
+  pool.query(`INSERT INTO purchase (product_id, user_id, rating) VALUES ('${product}', '${user}', '${rating}')`)
 );
 
 module.exports = {
