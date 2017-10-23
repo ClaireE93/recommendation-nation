@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const Recommender = require('likely');
 const db = require('../db/purchases/index');
 const historic = require('../generators/historic');
+const live = require('../generators/livePurchases'); //TODO: Move to live generator service
 // const router = require('./routes');
 
 const app = express();
@@ -15,6 +16,10 @@ app.use(bodyParser.urlencoded({ extended: true }));
 historic.setup(10, 10, 3, 10)
   .then(() => {
     console.log('DONE with setup');
+    return live.createPurchase();
+  })
+  .then(() => {
+    console.log('added live purchase');
   })
   .catch((err) => {
     console.log('ERROR in setup', err);

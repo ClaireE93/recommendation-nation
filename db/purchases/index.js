@@ -40,8 +40,16 @@ const addCategory = category => (
   pool.query(`INSERT INTO categories (category_id) VALUES ('${category}')`)
 );
 
+// NOTE: This function overwrites duplicate purchases so only the most recent
+// purchase and rating are stored
 const addPurchase = (product, user, rating) => (
-  pool.query(`INSERT INTO purchase (product_id, user_id, rating) VALUES ('${product}', '${user}', '${rating}')`)
+  pool.query(`UPDATE purchase SET rating='${rating}' WHERE user_id='${user}' AND product_id='${product}'`)
+    .then(() => (
+      pool.query(`INSERT INTO purchase (product_id, user_id, rating)
+      SELECT '${product}', '${user}', '${rating}'
+      WHERE NOT EXISTS (SELECT 1 FROM purchase WHERE user_id='${user}' AND product_id='${product}')
+      `)
+    ))
 );
 
 module.exports = {

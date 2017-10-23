@@ -1,5 +1,10 @@
 const db = require('../db/purchases/index.js');
 
+// NOTE: Use these for live data generation
+let totalUsers;
+let totalProducts;
+let totalCategories;
+
 const genUsers = (numUsers) => {
   const promiseArr = [];
   for (let i = 1; i <= numUsers; i += 1) {
@@ -44,9 +49,12 @@ const genPurchases = (numPurchases, numUsers, numProducts) => {
   return Promise.all(promiseArr);
 };
 
-const setup = (numUsers, numProducts, numCategories, numPurchases) => (
+const setup = (numUsers, numProducts, numCategories, numPurchases) => {
+  totalUsers = numUsers;
+  totalProducts = numProducts;
+  totalCategories = numCategories;
   // Generate users, then categories, then products, then purchases
-  genUsers(numUsers)
+  return genUsers(numUsers)
     .then(() => (
       genCategories(numCategories)
     ))
@@ -58,9 +66,24 @@ const setup = (numUsers, numProducts, numCategories, numPurchases) => (
     ))
     .catch((err) => {
       throw err;
-    })
+    });
+};
+
+const getUsers = () => (
+  totalUsers
+);
+
+const getProducts = () => (
+  totalUsers
+);
+
+const getCategories = () => (
+  totalUsers
 );
 
 module.exports = {
   setup,
+  getUsers,
+  getProducts,
+  getCategories,
 };
