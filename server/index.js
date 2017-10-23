@@ -2,6 +2,7 @@ const express = require('express');
 const morgan = require('morgan');
 const bodyParser = require('body-parser');
 const Recommender = require('likely');
+const db = require('../db/purchases/index');
 // const router = require('./routes');
 
 const app = express();
@@ -9,8 +10,13 @@ app.use(morgan('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-
-
+db.getAllUsers()
+  .then((results) => {
+    console.log('results are', results);
+  })
+  .catch((err) => {
+    throw err;
+  });
 
 
 // app.use('/', (req, res) => {
