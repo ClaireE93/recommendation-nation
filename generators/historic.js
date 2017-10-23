@@ -53,8 +53,11 @@ const setup = (numUsers, numProducts, numCategories, numPurchases) => {
   totalUsers = numUsers;
   totalProducts = numProducts;
   totalCategories = numCategories;
-  // Generate users, then categories, then products, then purchases
-  return genUsers(numUsers)
+  // Clear DB, generate users, then categories, then products, then purchases
+  return db.deleteAll()
+    .then(() => (
+      genUsers(numUsers)
+    ))
     .then(() => (
       genCategories(numCategories)
     ))

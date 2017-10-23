@@ -52,6 +52,19 @@ const addPurchase = (product, user, rating) => (
     ))
 );
 
+const deleteAll = () => (
+  pool.query('DELETE FROM purchase')
+    .then(() => (
+      pool.query('DELETE FROM products')
+    ))
+    .then(() => (
+      pool.query('DELETE FROM categories')
+    ))
+    .then(() => (
+      pool.query('DELETE FROM users')
+    ))
+);
+
 module.exports = {
   getAllUsers,
   getAllProducts,
@@ -61,4 +74,5 @@ module.exports = {
   addProduct,
   addCategory,
   addPurchase,
+  deleteAll,
 };
