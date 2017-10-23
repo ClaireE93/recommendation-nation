@@ -1,52 +1,44 @@
 const db = require('../db/purchases/index.js');
 
-// NOTE: Use these for live data generation
+// NOTE: Use these for live data generation to make non random purchases
 let totalUsers;
 let totalProducts;
 let totalCategories;
 
-const genUsers = (numUsers) => {
+const promiseFactory = (end, dbFunc, options) => {
   const promiseArr = [];
-  for (let i = 1; i <= numUsers; i += 1) {
-    const func = db.addUser(i);
+  let params = [];
+  for (let i = 1; i <= end; i += 1) {
+    if (options) {
+      params = options.map(func => func());
+    }
+    const func = dbFunc(i, ...params);
     promiseArr.push(func);
   }
 
   return Promise.all(promiseArr);
 };
 
-const genCategories = (numCategories) => {
-  const promiseArr = [];
-  for (let i = 1; i <= numCategories; i += 1) {
-    const func = db.addCategory(i);
-    promiseArr.push(func);
-  }
+const genUsers = numUsers => (
+  promiseFactory(numUsers, db.addUser)
+);
 
-  return Promise.all(promiseArr);
-};
+const genCategories = numCategories => (
+  promiseFactory(numCategories, db.addCategory)
+);
 
 const genProducts = (numProducts, numCategories) => {
-  const promiseArr = [];
-  for (let i = 1; i <= numProducts; i += 1) {
-    const category = Math.ceil(Math.random() * numCategories);
-    const func = db.addProduct(i, category);
-    promiseArr.push(func);
-  }
-
-  return Promise.all(promiseArr);
+  const category = () => Math.ceil(Math.random() * numCategories);
+  const options = [category];
+  return promiseFactory(numProducts, db.addProduct, options);
 };
 
 const genPurchases = (numPurchases, numUsers, numProducts) => {
-  const promiseArr = [];
-  for (let i = 1; i <= numPurchases; i += 1) {
-    const product = Math.ceil(Math.random() * numProducts);
-    const user = Math.ceil(Math.random() * numUsers);
-    const rating = Math.ceil(Math.random() * 5);
-    const func = db.addPurchase(product, user, rating);
-    promiseArr.push(func);
-  }
-
-  return Promise.all(promiseArr);
+  const product = () => Math.ceil(Math.random() * numProducts);
+  const user = () => Math.ceil(Math.random() * numUsers);
+  const rating = () => Math.ceil(Math.random() * 5);
+  const options = [product, user, rating];
+  return promiseFactory(numPurchases, db.addPurchase, options);
 };
 
 const setup = (numUsers, numProducts, numCategories, numPurchases) => {
@@ -77,11 +69,11 @@ const getUsers = () => (
 );
 
 const getProducts = () => (
-  totalUsers
+  totalProducts
 );
 
 const getCategories = () => (
-  totalUsers
+  totalCategories
 );
 
 module.exports = {

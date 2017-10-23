@@ -42,7 +42,7 @@ const addCategory = category => (
 
 // NOTE: This function overwrites duplicate purchases so only the most recent
 // purchase and rating are stored
-const addPurchase = (product, user, rating) => (
+const addPurchase = (ind, product, user, rating) => (
   pool.query(`UPDATE purchase SET rating='${rating}' WHERE user_id='${user}' AND product_id='${product}'`)
     .then(() => (
       pool.query(`INSERT INTO purchase (product_id, user_id, rating)
@@ -65,6 +65,16 @@ const deleteAll = () => (
     ))
 );
 
+const indexAll = () => (
+  pool.query('CREATE UNIQUE INDEX category_idx ON products (category)')
+    .then(() => (
+      pool.query('CREATE UNIQUE INDEX user_idx ON purchase (user_id)')
+    ))
+    .then(() => (
+      pool.query('CREATE UNIQUE INDEX product_idx ON purchase (product_id)')
+    ))
+);
+
 module.exports = {
   getAllUsers,
   getAllProducts,
@@ -75,4 +85,5 @@ module.exports = {
   addCategory,
   addPurchase,
   deleteAll,
+  indexAll,
 };
