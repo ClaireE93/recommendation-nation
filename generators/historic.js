@@ -5,15 +5,15 @@ let totalUsers;
 let totalProducts;
 let totalCategories;
 
-const promiseFactory = (end, dbFunc, options) => {
+const promiseFactory = async function factory(end, dbFunc, options) {
   const promiseArr = [];
   let params = [];
   for (let i = 1; i <= end; i += 1) {
     if (options) {
       params = options.map(func => func());
     }
-    const func = dbFunc(i, ...params);
-    promiseArr.push(func);
+    // const func = dbFunc(i, ...params);
+    promiseArr.push(dbFunc(i, ...params));
   }
 
   return Promise.all(promiseArr);
@@ -94,7 +94,7 @@ const initialSetup = () => {
     categories,
     purchases,
   } = setupParams;
-  const start =  Date.now();
+  const start = Date.now();
   console.log('database seed started at', new Date(start).toString())
 
   setup(users, products, categories, purchases)
@@ -109,8 +109,8 @@ const initialSetup = () => {
     });
 };
 
-// NOTE: Comment me out for testing!
-initialSetup();
+// Comment this line out for testing
+// initialSetup();
 
 // Export functions for testing
 module.exports = {
@@ -122,4 +122,5 @@ module.exports = {
   genProducts,
   genPurchases,
   genCategories,
+  initialSetup,
 };
