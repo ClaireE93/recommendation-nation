@@ -81,10 +81,10 @@ const getCategories = () => (
 
 
 const setupParams = {
-  users: 10,
-  products: 10,
-  categories: 3,
-  purchases: 10,
+  users: 50000,
+  products: 10000,
+  categories: 1000,
+  purchases: 10000000,
 };
 
 const initialSetup = () => {
@@ -94,10 +94,15 @@ const initialSetup = () => {
     categories,
     purchases,
   } = setupParams;
+  const start =  Date.now();
+  console.log('database seed started at', new Date(start).toString())
 
   setup(users, products, categories, purchases)
     .then(() => {
       console.log('Database seed complete');
+      const end = Date.now();
+      console.log('Database seed complete at', new Date(end).toString());
+      console.log('Time elapsed in milliseconds', (end - start));
     })
     .catch((err) => {
       console.log('ERROR in setup', err);
@@ -105,7 +110,7 @@ const initialSetup = () => {
 };
 
 // NOTE: Comment me out for testing!
-// initialSetup();
+initialSetup();
 
 // Export functions for testing
 module.exports = {
