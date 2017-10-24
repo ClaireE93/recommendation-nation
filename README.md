@@ -34,8 +34,10 @@ npm start
 ## Requirements
 
 - Node 6.9.x
+- Express 
 - Postgresql 9.6.x
-- etc
+- MongoDB
+- Mongoose
 
 ## Other Information
 

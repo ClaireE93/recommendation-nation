@@ -137,7 +137,7 @@ describe('Purchases Database Tests', () => {
   });
 
   it('Should add a recommendation', (done) => {
-    Recs.create({ user: 5, recommendations: { 5: 1.3 } }, (err) => {
+    Recs.create({ user: 5, recommendations: { 5: 1.3 }, count: 1 }, (err) => {
       if (err) { throw err; }
       Recs.find((err, result) => {
         expect(result.length).to.equal(1);
@@ -148,7 +148,7 @@ describe('Purchases Database Tests', () => {
   });
 
   it('Should have a working add and fetch function', (done) => {
-    mongo.add({ 1: 1.5 }, 10, () => {
+    mongo.add({ 1: 1.5 }, 10, 1, () => {
       const user = 10;
       mongo.fetch(user, (err, data) => {
         expect(data.recommendations).to.deep.equal({ 1: 1.5 });

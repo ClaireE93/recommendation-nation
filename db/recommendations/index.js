@@ -11,14 +11,15 @@ db.once('open', () => {
 const recSchema = mongoose.Schema({
   user: { type: Number, index: true, required: true },
   recommendations: {},
+  count: Number,
 });
 
 const Recs = mongoose.model('Recs', recSchema);
 
-const add = (recObj = {}, user = 0, cb) => {
+const add = (recObj = {}, user = 0, count = 0, cb) => {
   Recs.update(
     { user },
-    { recommendations: recObj },
+    { recommendations: recObj, count },
     { upsert: true, setDefaultsOnInsert: true },
     cb,
   );
