@@ -123,9 +123,66 @@ describe('Purchases Database Tests', () => {
         done();
       });
   });
+
+  it('Should heap insert', (done) => {
+    const products = [];
+    const categories = [];
+    const users = [];
+    const purchases = [];
+    for (let i = 1; i <= 20; i += 1) {
+      products.push({ product_id: i, category: Math.ceil(Math.random() * 20) });
+      categories.push({ category_id: i });
+      users.push({ user_id: i });
+      purchases.push({
+        user_id: i,
+        product_id: i,
+        rating: Math.ceil(Math.random() * 5),
+      });
+    }
+
+    db.heapInsertUsers(users)
+      .then(() => {
+        const queryStr = 'SELECT count(*) FROM users';
+        return client.query(queryStr);
+      })
+      .then(results => (
+        expect(results.rows[0].count).to.equal('20')
+      ))
+      .then(() => (
+        db.heapInsertCategories(categories)
+      ))
+      .then(() => {
+        const queryStr = 'SELECT count(*) FROM categories';
+        return client.query(queryStr);
+      })
+      .then(results => (
+        expect(results.rows[0].count).to.equal('20')
+      ))
+      .then(() => (
+        db.heapInsertProducts(products)
+      ))
+      .then(() => {
+        const queryStr = 'SELECT count(*) FROM products';
+        return client.query(queryStr);
+      })
+      .then(results => (
+        expect(results.rows[0].count).to.equal('20')
+      ))
+      .then(() => (
+        db.heapInsertPurchases(purchases)
+      ))
+      .then(() => {
+        const queryStr = 'SELECT count(*) FROM purchase';
+        return client.query(queryStr);
+      })
+      .then((results) => {
+        expect(results.rows[0].count).to.equal('20');
+        done();
+      });
+  });
 });
 
-describe('Purchases Database Tests', () => {
+describe('Recommendation Database Tests', () => {
 
   const { Recs } = mongo;
   before((done) => {

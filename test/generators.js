@@ -83,58 +83,7 @@ describe('Purchases Database Tests', () => {
         return client.query(queryStr);
       })
       .then((results) => {
-        expect(results.rows.length).to.equal(testNum);
-        done();
-      });
-  });
-
-  it('Should generate all table data on setup', (done) => {
-    const testUsers = 15;
-    const testProd = 10;
-    const testCat = 5;
-    const testPurchases = 15;
-    gen.setup(testUsers, testProd, testCat, testPurchases)
-      .then(() => {
-        const queryStr = 'SELECT * FROM users';
-        return client.query(queryStr);
-      })
-      .then((results) => {
-        expect(results.rows.length).to.equal(testUsers);
-      })
-      .then(() => {
-        const queryStr = 'SELECT * FROM products';
-        return client.query(queryStr);
-      })
-      .then((results) => {
-        expect(results.rows.length).to.equal(testProd);
-      })
-      .then(() => {
-        const queryStr = 'SELECT * FROM categories';
-        return client.query(queryStr);
-      })
-      .then((results) => {
-        expect(results.rows.length).to.equal(testCat);
-      })
-      .then(() => {
-        const queryStr = 'SELECT * FROM purchase';
-        return client.query(queryStr);
-      })
-      .then((results) => {
-        expect(results.rows.length).to.be.within(1, testPurchases);
-        done();
-      });
-  });
-
-  it('Should have working getters', (done) => {
-    const testUsers = 15;
-    const testProd = 10;
-    const testCat = 5;
-    const testPurchases = 15;
-    gen.setup(testUsers, testProd, testCat, testPurchases)
-      .then(() => {
-        expect(gen.getUsers()).to.equal(testUsers);
-        expect(gen.getProducts()).to.equal(testProd);
-        expect(gen.getCategories()).to.equal(testCat);
+        expect(results.rows.length).to.be.within(1, testNum);
         done();
       });
   });

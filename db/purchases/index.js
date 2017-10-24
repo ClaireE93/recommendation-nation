@@ -20,17 +20,17 @@ const pool = new Pool(cn);
 
 const db = pgp(cn);
 
-const cs = new pgp.helpers.ColumnSet([
-  'product_id',
-  'user_id',
-  'rating',
-], { table: 'purchase' });
-
 // Array must be [{ product_id: <int>, user_id: <int>, rating: <float> }, ...]
 const heapInsertPurchases = (array) => {
-  const insert = pgp.helpers.insert(array, cs);
+  const csPurchases = new pgp.helpers.ColumnSet([
+    'product_id',
+    'user_id',
+    'rating',
+  ], { table: 'purchase' });
+  const insert = pgp.helpers.insert(array, csPurchases);
   return db.none(insert);
 };
+// EXAMPLE for upsert:
 // let query = this.pgp.helpers.insert(collection, col_set)
 // + ' ON CONFLICT ON CONSTRAINT constraint_name_goes_here DO UPDATE SET modified_date = now()'
 

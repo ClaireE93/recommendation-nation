@@ -5,24 +5,6 @@ const uniqBy = require('lodash.uniqby');
 let totalUsers;
 let totalProducts;
 let totalCategories;
-// 
-// const promiseFactory = async function factory(end, dbFunc, options) {
-//   const promiseArr = [];
-//   let params = [];
-//   for (let i = 1; i <= end; i += 1) {
-//     if (options) {
-//       params = options.map(func => func());
-//     }
-//     // const func = dbFunc(i, ...params);
-//     promiseArr.push(dbFunc(i, ...params));
-//   }
-//
-//   return Promise.all(promiseArr);
-// };
-
-// const genUsers = numUsers => (
-//   promiseFactory(numUsers, db.addUser)
-// );
 
 const genUsers = (numUsers) => {
   const final = [];
@@ -34,10 +16,6 @@ const genUsers = (numUsers) => {
   return db.heapInsertUsers(final);
 };
 
-// const genCategories = numCategories => (
-//   promiseFactory(numCategories, db.addCategory)
-// );
-
 const genCategories = (numCategories) => {
   const final = [];
   for (let i = 1; i <= numCategories; i += 1) {
@@ -47,12 +25,6 @@ const genCategories = (numCategories) => {
 
   return db.heapInsertCategories(final);
 };
-
-// const genProducts = (numProducts, numCategories) => {
-//   const category = () => Math.ceil(Math.random() * numCategories);
-//   const options = [category];
-//   return promiseFactory(numProducts, db.addProduct, options);
-// };
 
 const genProducts = (numProducts, numCategories) => {
   const final = [];
@@ -82,8 +54,6 @@ const genPurchases = (numPurchases, numUsers, numProducts) => {
   const result = uniqBy(heap, v => [v.product_id, v.user_id].join());
 
   return db.heapInsertPurchases(result);
-  // const options = [product, user, rating];
-  // return promiseFactory(numPurchases, db.addPurchase, options);
 };
 
 const setup = (numUsers, numProducts, numCategories, numPurchases) => {
@@ -131,14 +101,14 @@ const getCategories = () => (
 //   categories: 1000,
 //   purchases: 10000000,
 // };
-const setupParams = {
-  users: 5,
-  products: 10,
-  categories: 3,
-  purchases: 10,
-};
+// const setupParams = {
+//   users: 5,
+//   products: 10,
+//   categories: 3,
+//   purchases: 10,
+// };
 
-const initialSetup = () => {
+const initialSetup = (setupParams) => {
   const {
     users,
     products,
@@ -161,7 +131,7 @@ const initialSetup = () => {
 };
 
 // Comment this line out for testing
-initialSetup();
+// initialSetup();
 
 // Export functions for testing
 module.exports = {
