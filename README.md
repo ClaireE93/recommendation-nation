@@ -23,6 +23,10 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
 To start the app, run the following:
 ```
 node db/purchases/setup.js
+node generators/historic.js
+```
+Once the database is seeded using historic.js, run the following:
+```
 npm run startdb
 npm start
 ```
@@ -30,8 +34,10 @@ npm start
 ## Requirements
 
 - Node 6.9.x
+- Express 
 - Postgresql 9.6.x
-- etc
+- MongoDB
+- Mongoose
 
 ## Other Information
 

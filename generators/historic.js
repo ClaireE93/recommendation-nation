@@ -1,50 +1,61 @@
 const db = require('../db/purchases/index.js');
+const uniqBy = require('lodash.uniqby');
 
-// NOTE: Use these for live data generation to make non random purchases
-let totalUsers;
-let totalProducts;
-let totalCategories;
-
-const promiseFactory = (end, dbFunc, options) => {
-  const promiseArr = [];
-  let params = [];
-  for (let i = 1; i <= end; i += 1) {
-    if (options) {
-      params = options.map(func => func());
-    }
-    const func = dbFunc(i, ...params);
-    promiseArr.push(func);
+const genUsers = (numUsers) => {
+  const final = [];
+  for (let i = 1; i <= numUsers; i += 1) {
+    const obj = { user_id: i };
+    final.push(obj);
   }
 
-  return Promise.all(promiseArr);
+  return db.heapInsertUsers(final);
 };
 
-const genUsers = numUsers => (
-  promiseFactory(numUsers, db.addUser)
-);
+const genCategories = (numCategories) => {
+  const final = [];
+  for (let i = 1; i <= numCategories; i += 1) {
+    const obj = { category_id: i };
+    final.push(obj);
+  }
 
-const genCategories = numCategories => (
-  promiseFactory(numCategories, db.addCategory)
-);
+  return db.heapInsertCategories(final);
+};
 
 const genProducts = (numProducts, numCategories) => {
-  const category = () => Math.ceil(Math.random() * numCategories);
-  const options = [category];
-  return promiseFactory(numProducts, db.addProduct, options);
+  const final = [];
+  for (let i = 1; i <= numProducts; i += 1) {
+    const cat = Math.ceil(Math.random() * numCategories);
+    const obj = { category: cat, product_id: i };
+    final.push(obj);
+  }
+
+  return db.heapInsertProducts(final);
 };
 
 const genPurchases = (numPurchases, numUsers, numProducts) => {
   const product = () => Math.ceil(Math.random() * numProducts);
   const user = () => Math.ceil(Math.random() * numUsers);
   const rating = () => Math.ceil(Math.random() * 5);
-  const options = [product, user, rating];
-  return promiseFactory(numPurchases, db.addPurchase, options);
+  const heap = [];
+  for (let i = 0; i < numPurchases; i += 1) {
+    const purchaseObj = {
+      product_id: product(),
+      user_id: user(),
+      rating: rating(),
+    };
+    heap.push(purchaseObj);
+  }
+
+  const result = uniqBy(heap, purchase => [purchase.product_id, purchase.user_id].join());
+
+  return db.heapInsertPurchases(result);
 };
 
 const setup = (numUsers, numProducts, numCategories, numPurchases) => {
-  totalUsers = numUsers;
-  totalProducts = numProducts;
-  totalCategories = numCategories;
+  // Use these for generating live purchases
+  module.exports.totalUsers = numUsers;
+  module.exports.totalProducts = numProducts;
+  module.exports.totalCategories = numCategories;
   // Clear DB, generate users, then categories, then products, then purchases
   return db.deleteAll()
     .then(() => (
@@ -59,26 +70,42 @@ const setup = (numUsers, numProducts, numCategories, numPurchases) => {
     .then(() => (
       genPurchases(numPurchases, numUsers, numProducts)
     ))
+    .then(() => {
+      db.indexAll();
+    })
     .catch((err) => {
       throw err;
     });
 };
 
-const getUsers = () => (
-  totalUsers
-);
+const initialSetup = (setupParams) => {
+  const {
+    users,
+    products,
+    categories,
+    purchases,
+  } = setupParams;
+  const start = Date.now();
+  console.log('database seed started at', new Date(start).toString());
 
-const getProducts = () => (
-  totalProducts
-);
+  setup(users, products, categories, purchases)
+    .then(() => {
+      console.log('Database seed complete');
+      const end = Date.now();
+      console.log('Database seed complete at', new Date(end).toString());
+      console.log('Time elapsed in milliseconds', (end - start));
+    })
+    .catch((err) => {
+      console.log('ERROR in setup', err);
+    });
+};
 
-const getCategories = () => (
-  totalCategories
-);
-
+// Export functions for testing
 module.exports = {
   setup,
-  getUsers,
-  getProducts,
-  getCategories,
+  genUsers,
+  genProducts,
+  genPurchases,
+  genCategories,
+  initialSetup,
 };

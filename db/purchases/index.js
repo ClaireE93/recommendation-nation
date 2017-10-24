@@ -1,8 +1,11 @@
 const { Pool } = require('pg');
+const pgp = require('pg-promise')({
+  capSQL: true, // generate capitalized SQL
+});
 
 // See https://github.com/brianc/node-pg-pool for possible url parsing issues
 // NOTE: Fix this for deployment
-const pool = new Pool({
+const cn = {
   database: 'purchases',
   user: 'mtakano',
   password: null,
@@ -10,7 +13,50 @@ const pool = new Pool({
   // ssl: true,
   max: 20, // set pool max size to 20
   idleTimeoutMillis: 1000, // close idle clients after 1 second
-});
+};
+
+const pool = new Pool(cn);
+
+const db = pgp(cn);
+
+// Array must be [{ product_id: <int>, user_id: <int>, rating: <float> }, ...]
+const heapInsertPurchases = (array) => {
+  const csPurchases = new pgp.helpers.ColumnSet([
+    'product_id',
+    'user_id',
+    'rating',
+  ], { table: 'purchase' });
+  const insert = pgp.helpers.insert(array, csPurchases);
+  return db.none(insert);
+};
+// EXAMPLE for upsert:
+// let query = this.pgp.helpers.insert(collection, col_set)
+// + ' ON CONFLICT ON CONSTRAINT constraint_name_goes_here DO UPDATE SET modified_date = now()'
+
+const heapInsertUsers = (array) => {
+  const csUsers = new pgp.helpers.ColumnSet([
+    'user_id',
+  ], { table: 'users' });
+  const insert = pgp.helpers.insert(array, csUsers);
+  return db.none(insert);
+};
+
+const heapInsertCategories = (array) => {
+  const csCategories = new pgp.helpers.ColumnSet([
+    'category_id',
+  ], { table: 'categories' });
+  const insert = pgp.helpers.insert(array, csCategories);
+  return db.none(insert);
+};
+
+const heapInsertProducts = (array) => {
+  const csProducts = new pgp.helpers.ColumnSet([
+    'product_id',
+    'category',
+  ], { table: 'products' });
+  const insert = pgp.helpers.insert(array, csProducts);
+  return db.none(insert);
+};
 
 const getAllUsers = () => (
   pool.query('SELECT * FROM users')
@@ -66,16 +112,23 @@ const deleteAll = () => (
 );
 
 const indexAll = () => (
-  pool.query('CREATE UNIQUE INDEX category_idx ON products (category)')
+  pool.query('CREATE INDEX category_idx ON products (category)')
     .then(() => (
-      pool.query('CREATE UNIQUE INDEX user_idx ON purchase (user_id)')
+      pool.query('CREATE INDEX user_idx ON purchase (user_id)')
     ))
     .then(() => (
-      pool.query('CREATE UNIQUE INDEX product_idx ON purchase (product_id)')
+      pool.query('CREATE INDEX product_idx ON purchase (product_id)')
     ))
+    .catch((err) => {
+      throw err;
+    })
 );
 
 module.exports = {
+  heapInsertPurchases,
+  heapInsertUsers,
+  heapInsertCategories,
+  heapInsertProducts,
   getAllUsers,
   getAllProducts,
   getAllCategories,
