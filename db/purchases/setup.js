@@ -17,10 +17,9 @@ client.query('CREATE TABLE users(id SERIAL PRIMARY KEY, user_id INTEGER UNIQUE)'
       rating FLOAT(8))`)
   ))
   .then(() => {
-    console.log('all tables made');
     client.end();
   })
   .catch((err) => {
-    console.log('ERR ', err);
     client.end();
+    throw err;
   });

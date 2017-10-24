@@ -4,7 +4,7 @@
   "description": "The project description",
   "main": ".eslintrc.js",
   "scripts": {
-    "test": "mocha test/db.js; RES=$?; kill %1; exit $RES",
+    "test": "mocha test/generators.js && mocha test/db.js",
     "start": "nodemon server/index.js",
     "startdb": "node db/recommendations/index.js",
     "test:es6": "mocha --compilers js:babel-register test/db.js; RES=$?; kill %1; exit $RES"

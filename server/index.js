@@ -2,8 +2,6 @@ const express = require('express');
 const morgan = require('morgan');
 const bodyParser = require('body-parser');
 const historic = require('../generators/historic');
-// const live = require('../generators/livePurchases'); //TODO: Move to live generator service
-// const router = require('./routes');
 
 const app = express();
 app.use(morgan('dev'));

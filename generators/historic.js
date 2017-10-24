@@ -104,11 +104,17 @@ const initialSetup = () => {
     });
 };
 
-initialSetup();
+// NOTE: Comment me out for testing!
+// initialSetup();
 
+// Export functions for testing
 module.exports = {
   getUsers,
   getProducts,
   getCategories,
   setup,
+  genUsers,
+  genProducts,
+  genPurchases,
+  genCategories,
 };

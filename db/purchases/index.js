@@ -74,7 +74,7 @@ const indexAll = () => (
       pool.query('CREATE INDEX product_idx ON purchase (product_id)')
     ))
     .catch((err) => {
-      console.log('ERR in index', err);
+      throw err;
     })
 );
 
