@@ -1,8 +1,12 @@
 const { Pool } = require('pg');
+const pgp = require('pg-promise')({
+  capSQL: true, // generate capitalized SQL
+});
 
 // See https://github.com/brianc/node-pg-pool for possible url parsing issues
 // NOTE: Fix this for deployment
-const pool = new Pool({
+
+const cn = {
   database: 'purchases',
   user: 'mtakano',
   password: null,
@@ -10,7 +14,25 @@ const pool = new Pool({
   // ssl: true,
   max: 20, // set pool max size to 20
   idleTimeoutMillis: 1000, // close idle clients after 1 second
-});
+};
+
+const pool = new Pool(cn);
+
+const db = pgp(cn);
+
+const cs = new pgp.helpers.ColumnSet([
+  'product_id',
+  'user_id',
+  'rating',
+], { table: 'purchase' });
+
+// Array must be [{ product_id: <int>, user_id: <int>, rating: <float> }, ...]
+const heapInsertPurchases = (array) => {
+  const insert = pgp.helpers.insert(array, cs);
+  return db.none(insert);
+};
+// let query = this.pgp.helpers.insert(collection, col_set)
+// + ' ON CONFLICT ON CONSTRAINT constraint_name_goes_here DO UPDATE SET modified_date = now()'
 
 const getAllUsers = () => (
   pool.query('SELECT * FROM users')
@@ -79,6 +101,7 @@ const indexAll = () => (
 );
 
 module.exports = {
+  heapInsertPurchases,
   getAllUsers,
   getAllProducts,
   getAllCategories,

@@ -40,10 +40,12 @@
     "body-parser": "^1.18.2",
     "express": "^4.16.2",
     "likely": "^0.2.0",
+    "lodash.uniqby": "^4.7.0",
     "mongoose": "^4.12.3",
     "morgan": "^1.9.0",
     "path": "^0.12.7",
     "pg": "^7.3.0",
+    "pg-promise": "^7.0.3",
     "pgtest": "^0.2.2"
   }
 }
