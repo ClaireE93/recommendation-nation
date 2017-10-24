@@ -59,6 +59,9 @@ const setup = (numUsers, numProducts, numCategories, numPurchases) => {
     .then(() => (
       genPurchases(numPurchases, numUsers, numProducts)
     ))
+    .then(() => {
+      db.indexAll();
+    })
     .catch((err) => {
       throw err;
     });
@@ -76,9 +79,36 @@ const getCategories = () => (
   totalCategories
 );
 
+
+const setupParams = {
+  users: 10,
+  products: 10,
+  categories: 3,
+  purchases: 10,
+};
+
+const initialSetup = () => {
+  const {
+    users,
+    products,
+    categories,
+    purchases,
+  } = setupParams;
+
+  setup(users, products, categories, purchases)
+    .then(() => {
+      console.log('Database seed complete');
+    })
+    .catch((err) => {
+      console.log('ERROR in setup', err);
+    });
+};
+
+initialSetup();
+
 module.exports = {
-  setup,
   getUsers,
   getProducts,
   getCategories,
+  setup,
 };

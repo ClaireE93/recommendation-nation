@@ -24,7 +24,3 @@ client.query('CREATE TABLE users(id SERIAL PRIMARY KEY, user_id INTEGER UNIQUE)'
     console.log('ERR ', err);
     client.end();
   });
-
-// NOTE: Steps:
-// 1) Load data in
-// 2) Create indexes on loaded tables (CREATE INDEX or CREATE INDEX CONCURRENTLY)

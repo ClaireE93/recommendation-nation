@@ -4,9 +4,10 @@
   "description": "The project description",
   "main": ".eslintrc.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "mocha test/db.js; RES=$?; kill %1; exit $RES",
     "start": "nodemon server/index.js",
-    "startdb": "node db/recommendations/index.js"
+    "startdb": "node db/recommendations/index.js",
+    "test:es6": "mocha --compilers js:babel-register test/db.js; RES=$?; kill %1; exit $RES"
   },
   "repository": {
     "type": "git",
@@ -25,6 +26,7 @@
     "babel-preset-env": "^1.6.1",
     "babel-preset-es2015": "^6.24.1",
     "babel-preset-stage-2": "^6.24.1",
+    "babel-register": "^6.26.0",
     "chai": "^4.1.2",
     "eslint": "^4.9.0",
     "eslint-config-airbnb": "^16.1.0",

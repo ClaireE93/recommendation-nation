@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-mongoose.connect('mongodb://localhost/recs');
+mongoose.connect('mongodb://localhost/recs', { useMongoClient: true });
 
 const db = mongoose.connection;
 db.on('error', (err) => { throw err; });
@@ -9,7 +9,7 @@ db.once('open', () => {
 });
 
 const recSchema = mongoose.Schema({
-  user: { type: Number, index: true },
+  user: { type: Number, index: true, required: true },
   recommendations: {},
 });
 
@@ -32,4 +32,5 @@ const fetch = (user = 0, cb) => {
 module.exports = {
   add,
   fetch,
+  Recs,
 };

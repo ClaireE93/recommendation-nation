@@ -66,13 +66,16 @@ const deleteAll = () => (
 );
 
 const indexAll = () => (
-  pool.query('CREATE UNIQUE INDEX category_idx ON products (category)')
+  pool.query('CREATE INDEX category_idx ON products (category)')
     .then(() => (
-      pool.query('CREATE UNIQUE INDEX user_idx ON purchase (user_id)')
+      pool.query('CREATE INDEX user_idx ON purchase (user_id)')
     ))
     .then(() => (
-      pool.query('CREATE UNIQUE INDEX product_idx ON purchase (product_id)')
+      pool.query('CREATE INDEX product_idx ON purchase (product_id)')
     ))
+    .catch((err) => {
+      console.log('ERR in index', err);
+    })
 );
 
 module.exports = {
