@@ -5,7 +5,6 @@ const pgp = require('pg-promise')({
 
 // See https://github.com/brianc/node-pg-pool for possible url parsing issues
 // NOTE: Fix this for deployment
-
 const cn = {
   database: 'purchases',
   user: 'mtakano',

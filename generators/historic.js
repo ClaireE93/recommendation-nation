@@ -1,11 +1,6 @@
 const db = require('../db/purchases/index.js');
 const uniqBy = require('lodash.uniqby');
 
-// NOTE: Use these for live data generation to make non random purchases
-let totalUsers;
-let totalProducts;
-let totalCategories;
-
 const genUsers = (numUsers) => {
   const final = [];
   for (let i = 1; i <= numUsers; i += 1) {
@@ -51,15 +46,16 @@ const genPurchases = (numPurchases, numUsers, numProducts) => {
     heap.push(purchaseObj);
   }
 
-  const result = uniqBy(heap, v => [v.product_id, v.user_id].join());
+  const result = uniqBy(heap, purchase => [purchase.product_id, purchase.user_id].join());
 
   return db.heapInsertPurchases(result);
 };
 
 const setup = (numUsers, numProducts, numCategories, numPurchases) => {
-  totalUsers = numUsers;
-  totalProducts = numProducts;
-  totalCategories = numCategories;
+  // Use these for generating live purchases
+  module.exports.totalUsers = numUsers;
+  module.exports.totalProducts = numProducts;
+  module.exports.totalCategories = numCategories;
   // Clear DB, generate users, then categories, then products, then purchases
   return db.deleteAll()
     .then(() => (
@@ -82,32 +78,6 @@ const setup = (numUsers, numProducts, numCategories, numPurchases) => {
     });
 };
 
-const getUsers = () => (
-  totalUsers
-);
-
-const getProducts = () => (
-  totalProducts
-);
-
-const getCategories = () => (
-  totalCategories
-);
-
-
-// const setupParams = {
-//   users: 50000,
-//   products: 10000,
-//   categories: 1000,
-//   purchases: 10000000,
-// };
-// const setupParams = {
-//   users: 5,
-//   products: 10,
-//   categories: 3,
-//   purchases: 10,
-// };
-
 const initialSetup = (setupParams) => {
   const {
     users,
@@ -116,7 +86,7 @@ const initialSetup = (setupParams) => {
     purchases,
   } = setupParams;
   const start = Date.now();
-  console.log('database seed started at', new Date(start).toString())
+  console.log('database seed started at', new Date(start).toString());
 
   setup(users, products, categories, purchases)
     .then(() => {
@@ -130,14 +100,8 @@ const initialSetup = (setupParams) => {
     });
 };
 
-// Comment this line out for testing
-// initialSetup();
-
 // Export functions for testing
 module.exports = {
-  getUsers,
-  getProducts,
-  getCategories,
   setup,
   genUsers,
   genProducts,
