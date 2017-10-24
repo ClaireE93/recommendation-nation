@@ -34,6 +34,31 @@ const heapInsertPurchases = (array) => {
 // let query = this.pgp.helpers.insert(collection, col_set)
 // + ' ON CONFLICT ON CONSTRAINT constraint_name_goes_here DO UPDATE SET modified_date = now()'
 
+const heapInsertUsers = (array) => {
+  const csUsers = new pgp.helpers.ColumnSet([
+    'user_id',
+  ], { table: 'users' });
+  const insert = pgp.helpers.insert(array, csUsers);
+  return db.none(insert);
+};
+
+const heapInsertCategories = (array) => {
+  const csCategories = new pgp.helpers.ColumnSet([
+    'category_id',
+  ], { table: 'categories' });
+  const insert = pgp.helpers.insert(array, csCategories);
+  return db.none(insert);
+};
+
+const heapInsertProducts = (array) => {
+  const csProducts = new pgp.helpers.ColumnSet([
+    'product_id',
+    'category',
+  ], { table: 'products' });
+  const insert = pgp.helpers.insert(array, csProducts);
+  return db.none(insert);
+};
+
 const getAllUsers = () => (
   pool.query('SELECT * FROM users')
 );
@@ -102,6 +127,9 @@ const indexAll = () => (
 
 module.exports = {
   heapInsertPurchases,
+  heapInsertUsers,
+  heapInsertCategories,
+  heapInsertProducts,
   getAllUsers,
   getAllProducts,
   getAllCategories,

@@ -5,33 +5,64 @@ const uniqBy = require('lodash.uniqby');
 let totalUsers;
 let totalProducts;
 let totalCategories;
+// 
+// const promiseFactory = async function factory(end, dbFunc, options) {
+//   const promiseArr = [];
+//   let params = [];
+//   for (let i = 1; i <= end; i += 1) {
+//     if (options) {
+//       params = options.map(func => func());
+//     }
+//     // const func = dbFunc(i, ...params);
+//     promiseArr.push(dbFunc(i, ...params));
+//   }
+//
+//   return Promise.all(promiseArr);
+// };
 
-const promiseFactory = async function factory(end, dbFunc, options) {
-  const promiseArr = [];
-  let params = [];
-  for (let i = 1; i <= end; i += 1) {
-    if (options) {
-      params = options.map(func => func());
-    }
-    // const func = dbFunc(i, ...params);
-    promiseArr.push(dbFunc(i, ...params));
+// const genUsers = numUsers => (
+//   promiseFactory(numUsers, db.addUser)
+// );
+
+const genUsers = (numUsers) => {
+  const final = [];
+  for (let i = 1; i <= numUsers; i += 1) {
+    const obj = { user_id: i };
+    final.push(obj);
   }
 
-  return Promise.all(promiseArr);
+  return db.heapInsertUsers(final);
 };
 
-const genUsers = numUsers => (
-  promiseFactory(numUsers, db.addUser)
-);
+// const genCategories = numCategories => (
+//   promiseFactory(numCategories, db.addCategory)
+// );
 
-const genCategories = numCategories => (
-  promiseFactory(numCategories, db.addCategory)
-);
+const genCategories = (numCategories) => {
+  const final = [];
+  for (let i = 1; i <= numCategories; i += 1) {
+    const obj = { category_id: i };
+    final.push(obj);
+  }
+
+  return db.heapInsertCategories(final);
+};
+
+// const genProducts = (numProducts, numCategories) => {
+//   const category = () => Math.ceil(Math.random() * numCategories);
+//   const options = [category];
+//   return promiseFactory(numProducts, db.addProduct, options);
+// };
 
 const genProducts = (numProducts, numCategories) => {
-  const category = () => Math.ceil(Math.random() * numCategories);
-  const options = [category];
-  return promiseFactory(numProducts, db.addProduct, options);
+  const final = [];
+  for (let i = 1; i <= numProducts; i += 1) {
+    const cat = Math.ceil(Math.random() * numCategories);
+    const obj = { category: cat, product_id: i };
+    final.push(obj);
+  }
+
+  return db.heapInsertProducts(final);
 };
 
 const genPurchases = (numPurchases, numUsers, numProducts) => {
