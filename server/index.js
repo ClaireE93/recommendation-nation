@@ -17,9 +17,6 @@ const initElasticsearch = () => {
     })
     .then(elastic.initIndex)
     .then(elastic.initMapping)
-    .then(() => {
-      console.log('elasticsearch initialized');
-    })
     .catch((err) => {
       throw err;
     });

@@ -125,7 +125,6 @@ const indexAll = () => (
 
 module.exports = {
   heapInsertPurchases,
-  // heapInsert,
   heapInsertUsers,
   heapInsertCategories,
   heapInsertProducts,
