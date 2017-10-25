@@ -11,6 +11,16 @@ const setupParams = {
 // 87 seconds for 2M
 // 218 seconds for 5M
 
+// const setupParams = {
+//   users: 50000,
+//   products: 1000,
+//   categories: 20,
+//   purchases: 50000,
+// };
+
+// RECOMMENDATION MATRIX GEN:
+// 319 seconds for 100,000 --> 319 * 2500 ->
+
 
 let start;
 let end;

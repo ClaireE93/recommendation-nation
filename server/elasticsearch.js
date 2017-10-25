@@ -42,6 +42,7 @@ const initMapping = () => (
       properties: {
         number: { type: 'integer' },
         user: { type: 'integer' },
+        mae: { type: 'float' },
       },
     },
   })
