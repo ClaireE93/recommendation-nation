@@ -1,11 +1,41 @@
 const express = require('express');
 const morgan = require('morgan');
 const bodyParser = require('body-parser');
+const elastic = require('./elasticsearch');
 
 const app = express();
 app.use(morgan('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+const initElasticsearch = () => {
+  elastic.indexExists()
+    .then((exists) => {
+      if (exists) {
+        return elastic.deleteIndex();
+      }
+    })
+    .then(elastic.initIndex)
+    .then(elastic.initMapping)
+    .catch((err) => {
+      throw err;
+    });
+};
+
+initElasticsearch();
+
+
+const sendElasticsearchRandom = () => {
+  const obj = {
+    user_id: Math.ceil(Math.random() * 10000),
+    number: Math.ceil(Math.random() * 5),
+  };
+  elastic.addRec(obj);
+};
+
+setInterval(() => {
+  sendElasticsearchRandom();
+}, 1000);
 
 const generateRecommendations = () => {
   // TODO: Create m x n matrix

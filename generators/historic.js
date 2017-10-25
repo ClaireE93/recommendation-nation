@@ -51,13 +51,9 @@ const genPurchases = (numPurchases, numUsers, numProducts) => {
   return db.heapInsertPurchases(result);
 };
 
-const setup = (numUsers, numProducts, numCategories, numPurchases) => {
-  // Use these for generating live purchases
-  module.exports.totalUsers = numUsers;
-  module.exports.totalProducts = numProducts;
-  module.exports.totalCategories = numCategories;
-  // Clear DB, generate users, then categories, then products, then purchases
-  return db.deleteAll()
+const setup = (numUsers, numProducts, numCategories) => (
+  // Clear DB, generate users, then categories, then products
+  db.deleteAll()
     .then(() => (
       genUsers(numUsers)
     ))
@@ -67,16 +63,10 @@ const setup = (numUsers, numProducts, numCategories, numPurchases) => {
     .then(() => (
       genProducts(numProducts, numCategories)
     ))
-    .then(() => (
-      genPurchases(numPurchases, numUsers, numProducts)
-    ))
-    .then(() => {
-      db.indexAll();
-    })
     .catch((err) => {
       throw err;
-    });
-};
+    })
+);
 
 const initialSetup = (setupParams) => {
   const {
@@ -85,18 +75,10 @@ const initialSetup = (setupParams) => {
     categories,
     purchases,
   } = setupParams;
-  const start = Date.now();
-  console.log('database seed started at', new Date(start).toString());
 
-  setup(users, products, categories, purchases)
-    .then(() => {
-      console.log('Database seed complete');
-      const end = Date.now();
-      console.log('Database seed complete at', new Date(end).toString());
-      console.log('Time elapsed in milliseconds', (end - start));
-    })
+  return setup(users, products, categories, purchases)
     .catch((err) => {
-      console.log('ERROR in setup', err);
+      throw err;
     });
 };
 

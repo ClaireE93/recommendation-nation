@@ -1,3 +1,4 @@
+/* eslint-env mocha */
 const pg = require('pg');
 const mongoose = require('mongoose');
 const { expect } = require('chai');
@@ -183,7 +184,6 @@ describe('Purchases Database Tests', () => {
 });
 
 describe('Recommendation Database Tests', () => {
-
   const { Recs } = mongo;
   before((done) => {
     mongoose.createConnection('mongodb://localhost/recstest', done);

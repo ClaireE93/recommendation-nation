@@ -14,47 +14,46 @@ const cn = {
   max: 20, // set pool max size to 20
   idleTimeoutMillis: 1000, // close idle clients after 1 second
 };
-
 const pool = new Pool(cn);
 
 const db = pgp(cn);
+const csPurchases = new pgp.helpers.ColumnSet([
+  'product_id',
+  'user_id',
+  'rating',
+], { table: 'purchase' });
+
+const csUsers = new pgp.helpers.ColumnSet([
+  'user_id',
+], { table: 'users' });
+
+const csCategories = new pgp.helpers.ColumnSet([
+  'category_id',
+], { table: 'categories' });
+
+const csProducts = new pgp.helpers.ColumnSet([
+  'product_id',
+  'category',
+], { table: 'products' });
 
 // Array must be [{ product_id: <int>, user_id: <int>, rating: <float> }, ...]
 const heapInsertPurchases = (array) => {
-  const csPurchases = new pgp.helpers.ColumnSet([
-    'product_id',
-    'user_id',
-    'rating',
-  ], { table: 'purchase' });
-  const insert = pgp.helpers.insert(array, csPurchases);
+  const insert = `${pgp.helpers.insert(array, csPurchases, 'purchase')} ON CONFLICT ON CONSTRAINT no_duplicate_purchase DO UPDATE SET rating = EXCLUDED.rating`;
   return db.none(insert);
 };
-// EXAMPLE for upsert:
-// let query = this.pgp.helpers.insert(collection, col_set)
-// + ' ON CONFLICT ON CONSTRAINT constraint_name_goes_here DO UPDATE SET modified_date = now()'
 
 const heapInsertUsers = (array) => {
-  const csUsers = new pgp.helpers.ColumnSet([
-    'user_id',
-  ], { table: 'users' });
-  const insert = pgp.helpers.insert(array, csUsers);
+  const insert = pgp.helpers.insert(array, csUsers, 'users');
   return db.none(insert);
 };
 
 const heapInsertCategories = (array) => {
-  const csCategories = new pgp.helpers.ColumnSet([
-    'category_id',
-  ], { table: 'categories' });
-  const insert = pgp.helpers.insert(array, csCategories);
+  const insert = pgp.helpers.insert(array, csCategories, 'categories');
   return db.none(insert);
 };
 
 const heapInsertProducts = (array) => {
-  const csProducts = new pgp.helpers.ColumnSet([
-    'product_id',
-    'category',
-  ], { table: 'products' });
-  const insert = pgp.helpers.insert(array, csProducts);
+  const insert = pgp.helpers.insert(array, csProducts, 'products');
   return db.none(insert);
 };
 
@@ -75,15 +74,15 @@ const getAllPurchases = () => (
 );
 
 const addUser = user => (
-  pool.query(`INSERT INTO users (user_id) VALUES ('${user}')`)
+  pool.query(`INSERT INTO users (user_id) VALUES ('${user}') ON CONFLICT (user_id) DO NOTHING`)
 );
 
 const addProduct = (product, category) => (
-  pool.query(`INSERT INTO products (product_id, category) VALUES ('${product}', '${category}')`)
+  pool.query(`INSERT INTO products (product_id, category) VALUES ('${product}', '${category}') ON CONFLICT (product_id) DO NOTHING`)
 );
 
 const addCategory = category => (
-  pool.query(`INSERT INTO categories (category_id) VALUES ('${category}')`)
+  pool.query(`INSERT INTO categories (category_id) VALUES ('${category}') ON CONFLICT (category_id) DO NOTHING`)
 );
 
 // NOTE: This function overwrites duplicate purchases so only the most recent
