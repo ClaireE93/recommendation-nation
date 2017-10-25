@@ -75,15 +75,15 @@ const getAllPurchases = () => (
 );
 
 const addUser = user => (
-  pool.query(`INSERT INTO users (user_id) VALUES ('${user}')`)
+  pool.query(`INSERT INTO users (user_id) VALUES ('${user}') ON CONFLICT (user_id) DO NOTHING`)
 );
 
 const addProduct = (product, category) => (
-  pool.query(`INSERT INTO products (product_id, category) VALUES ('${product}', '${category}')`)
+  pool.query(`INSERT INTO products (product_id, category) VALUES ('${product}', '${category}') ON CONFLICT (product_id) DO NOTHING`)
 );
 
 const addCategory = category => (
-  pool.query(`INSERT INTO categories (category_id) VALUES ('${category}')`)
+  pool.query(`INSERT INTO categories (category_id) VALUES ('${category}') ON CONFLICT (category_id) DO NOTHING`)
 );
 
 // NOTE: This function overwrites duplicate purchases so only the most recent
