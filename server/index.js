@@ -31,7 +31,7 @@ initElasticsearch();
 const sendElasticsearchRandom = () => {
   const obj = {
     user_id: Math.ceil(Math.random() * 10000),
-    count: Math.ceil(Math.random() * 10),
+    number: Math.ceil(Math.random() * 5),
   };
   elastic.addRec(obj);
 };
