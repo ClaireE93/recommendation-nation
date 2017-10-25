@@ -14,7 +14,6 @@ const cn = {
   max: 20, // set pool max size to 20
   idleTimeoutMillis: 1000, // close idle clients after 1 second
 };
-
 const pool = new Pool(cn);
 
 const db = pgp(cn);

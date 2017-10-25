@@ -12,13 +12,6 @@ const setupParams = {
 // 218 seconds for 5M
 
 
-// const setupParams = {
-//   users: 1000,
-//   products: 10000,
-//   categories: 300,
-//   purchases: 10000,
-// };
-
 let start;
 let end;
 

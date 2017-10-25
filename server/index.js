@@ -1,14 +1,45 @@
 const express = require('express');
 const morgan = require('morgan');
 const bodyParser = require('body-parser');
-const historic = require('../generators/historic.js');
+const elastic = require('./elasticsearch');
 
 const app = express();
 app.use(morgan('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-console.log('historic.users', historic.totalUsers);
+const initElasticsearch = () => {
+  elastic.indexExists()
+    .then((exists) => {
+      if (exists) {
+        return elastic.deleteIndex();
+      }
+    })
+    .then(elastic.initIndex)
+    .then(elastic.initMapping)
+    .then(() => {
+      console.log('elasticsearch initialized');
+    })
+    .catch((err) => {
+      throw err;
+    });
+};
+
+initElasticsearch();
+
+
+const sendElasticsearchRandom = () => {
+  const obj = {
+    user_id: Math.ceil(Math.random() * 10000),
+    count: Math.ceil(Math.random() * 10),
+  };
+  elastic.addRec(obj);
+};
+
+setInterval(() => {
+  sendElasticsearchRandom();
+}, 1000);
+
 const generateRecommendations = () => {
   // TODO: Create m x n matrix
   // Generate initial recs
