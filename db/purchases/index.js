@@ -42,17 +42,17 @@ const heapInsertPurchases = (array) => {
 };
 
 const heapInsertUsers = (array) => {
-  const insert = pgp.helpers.insert(array, csUsers);
+  const insert = `${pgp.helpers.insert(array, csUsers, 'users')} ON CONFLICT (user_id) DO NOTHING`;
   return db.none(insert);
 };
 
 const heapInsertCategories = (array) => {
-  const insert = pgp.helpers.insert(array, csCategories);
+  const insert = `${pgp.helpers.insert(array, csCategories, 'categories')} ON CONFLICT (category_id) DO NOTHING`;
   return db.none(insert);
 };
 
 const heapInsertProducts = (array) => {
-  const insert = pgp.helpers.insert(array, csProducts);
+  const insert = `${pgp.helpers.insert(array, csProducts, 'products')} ON CONFLICT (product_id) DO NOTHING`;
   return db.none(insert);
 };
 
