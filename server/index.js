@@ -1,12 +1,14 @@
 const express = require('express');
 const morgan = require('morgan');
 const bodyParser = require('body-parser');
+const historic = require('../generators/historic.js');
 
 const app = express();
 app.use(morgan('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+console.log('historic.users', historic.totalUsers);
 const generateRecommendations = () => {
   // TODO: Create m x n matrix
   // Generate initial recs

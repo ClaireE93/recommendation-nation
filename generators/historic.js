@@ -67,12 +67,12 @@ const setup = (numUsers, numProducts, numCategories, numPurchases) => {
     .then(() => (
       genProducts(numProducts, numCategories)
     ))
-    .then(() => (
-      genPurchases(numPurchases, numUsers, numProducts)
-    ))
-    .then(() => {
-      db.indexAll();
-    })
+    // .then(() => (
+    //   genPurchases(numPurchases, numUsers, numProducts)
+    // ))
+    // .then(() => {
+    //   db.indexAll();
+    // })
     .catch((err) => {
       throw err;
     });
@@ -88,7 +88,7 @@ const initialSetup = (setupParams) => {
   const start = Date.now();
   console.log('database seed started at', new Date(start).toString());
 
-  setup(users, products, categories, purchases)
+  return setup(users, products, categories, purchases)
     .then(() => {
       console.log('Database seed complete');
       const end = Date.now();

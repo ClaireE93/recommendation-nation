@@ -17,6 +17,12 @@ client.query('CREATE TABLE users(id SERIAL, user_id INTEGER PRIMARY KEY)')
       rating FLOAT(8),
       CONSTRAINT no_duplicate_purchase UNIQUE (product_id, user_id)) `)
   ))
+  // .then(() => (
+  //   client.query(`CREATE TABLE purchase
+  //     (id SERIAL PRIMARY KEY, product_id INTEGER REFERENCES products (product_id),
+  //     user_id INTEGER REFERENCES users (user_id),
+  //     rating FLOAT(8)) `)
+  // ))
   .then(() => {
     client.end();
   })

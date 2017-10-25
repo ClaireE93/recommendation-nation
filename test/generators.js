@@ -1,3 +1,4 @@
+/* eslint-env mocha */
 const pg = require('pg');
 const { expect } = require('chai');
 const db = require('../db/purchases/index.js');
