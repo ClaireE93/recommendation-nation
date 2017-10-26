@@ -73,15 +73,15 @@ const getAllPurchases = () => (
 );
 
 const addUser = user => (
-  return db.none(`INSERT INTO users (user_id) VALUES ('${user}') ON CONFLICT (user_id) DO NOTHING`)
+  return db.none(`INSERT INTO users (user_id) VALUES ($/user/) ON CONFLICT (user_id) DO NOTHING`, {user})
 );
 
 const addProduct = (product, category) => (
-  return db.none(`INSERT INTO products (product_id, category) VALUES ('${product}', '${category}') ON CONFLICT (product_id) DO NOTHING`)
+  return db.none(`INSERT INTO products (product_id, category) VALUES ($/product/, $/category/) ON CONFLICT (product_id) DO NOTHING`, {product, category})
 );
 
 const addCategory = category => (
-  return db.none(`INSERT INTO categories (category_id) VALUES ('${category}') ON CONFLICT (category_id) DO NOTHING`)
+  return db.none(`INSERT INTO categories (category_id) VALUES ($/category/) ON CONFLICT (category_id) DO NOTHING`, {category})
 );
 
 // NOTE: This function overwrites duplicate purchases so only the most recent
