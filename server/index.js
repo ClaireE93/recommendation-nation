@@ -25,19 +25,19 @@ const initElasticsearch = () => {
 initElasticsearch();
 
 
-const sendElasticsearchRandom = () => {
-  const obj = {
-    user_id: Math.ceil(Math.random() * 10000),
-    number: Math.ceil(Math.random() * 5),
-    mae: Math.random() * 5,
-  };
-
-  elastic.addRec(obj);
-};
-
-setInterval(() => {
-  sendElasticsearchRandom();
-}, 1000);
+// const sendElasticsearchRandom = () => {
+//   const obj = {
+//     user_id: Math.ceil(Math.random() * 10000),
+//     number: Math.ceil(Math.random() * 5),
+//     mae: Math.random() * 5,
+//   };
+//
+//   elastic.addRec(obj);
+// };
+//
+// setInterval(() => {
+//   sendElasticsearchRandom();
+// }, 1000);
 
 const generateRecommendations = () => {
   // TODO: Create m x n matrix

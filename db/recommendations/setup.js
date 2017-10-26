@@ -12,6 +12,7 @@ const recSchema = mongoose.Schema({
   user: { type: Number, index: true, required: true },
   recommendations: {},
   count: Number,
+  mae: Number,
 });
 
 const Recs = mongoose.model('Recs', recSchema);

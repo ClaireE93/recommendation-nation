@@ -5,7 +5,7 @@ const JSONStream = require('JSONStream');
 const { Writable } = require('stream');
 const db = require('../../db/purchases/index.js');
 const mongo = require('../../db/recommendations/index.js');
-// const elastic = require('../elasticsearch.js');
+const elastic = require('../elasticsearch/index.js');
 
 const connectionString = process.env.DATABASE_URL || 'postgres://localhost:5432/purchases';
 const client = new pg.Client(connectionString);
@@ -87,16 +87,35 @@ const generateMatrix = () => {
     });
 };
 
+// NOTE: This function could also parse out any recs below a certain rating
+const parseRecs = (recs) => {
+  const result = {};
+  recs.forEach((rec) => {
+    result[rec[0]] = rec[1];
+  });
+
+  return result;
+};
+
 const generateRecs = () => {
   // const rowLabels = [];
   // const colLabels = [];
-
+  const promiseArr = [];
   const Model = Recommender.buildModel(matrix);
+  Object.keys(userObj).forEach((user) => {
+    const recs = Model.recommendations(userObj[user]);
+    const obj = parseRecs(recs);
+    const promiseMongo = mongo.add(obj, user, recs.length);
+    const promiseElastic = elastic.addRec({ user_id: user, number: recs.length, mae: 0 });
+    promiseArr.push(promiseMongo);
+    promiseArr.push(promiseElastic);
+  });
 
 
   // TODO: Get recs for every user and store to mongo
   // const recommendations = Model.recommendations(0);
-  console.log('done!');
+  console.log('done making promises!');
+  return Promise.all(promiseArr);
 };
 
 const populateRecommendations = () => {
@@ -109,11 +128,13 @@ const populateRecommendations = () => {
       console.log('finished making base matrix', new Date(end).toString());
       console.log('finished in ms', end - start);
       start = Date.now();
-      generateRecs();
+      return generateRecs();
+    })
+    .then(() => {
       end = Date.now();
       console.log('finished at', new Date(end).toString());
       console.log('finished in ms', end - start)
-    });
+    })
 };
 
 populateRecommendations();
