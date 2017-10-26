@@ -2,6 +2,7 @@ const express = require('express');
 const morgan = require('morgan');
 const bodyParser = require('body-parser');
 const elastic = require('./elasticsearch');
+const queueSetup = require('../queue/createQueues');
 
 const app = express();
 app.use(morgan('dev'));
@@ -23,6 +24,20 @@ const initElasticsearch = () => {
 };
 
 initElasticsearch();
+
+// Set up queues
+const setupQueues = () => {
+  let purchaseUrl;
+  let requestUrl;
+  queueSetup.init('purchases')
+    .then((newUrl) => {
+      purchaseUrl = newUrl;
+      return queueSetup.init('recRequests');
+    })
+    .then((newUrl) => {
+      requestUrl = newUrl;
+    });
+};
 
 
 // const sendElasticsearchRandom = () => {

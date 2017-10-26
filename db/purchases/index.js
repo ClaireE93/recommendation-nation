@@ -111,6 +111,8 @@ const deleteAll = () => (
 const indexAll = () => (
   db.tx(t => t.batch([
     t.none('CREATE INDEX category_idx ON products (category)'),
+    t.none('CREATE INDEX products_idx ON products (product_id)'),
+    t.none('CREATE INDEX users_idx ON users (user_id)'),
     t.none('CREATE INDEX user_idx ON purchase (user_id)'),
     t.none('CREATE INDEX product_idx ON purchase (product_id)'),
   ]))

@@ -1,6 +1,6 @@
 const historic = require('./historic.js');
 const db = require('../db/purchases/index.js');
-
+// 
 // const setupParams = {
 //   users: 50000,
 //   products: 10000,

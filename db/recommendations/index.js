@@ -18,11 +18,17 @@ const { Recs } = require('./setup.js');
 // const Recs = mongoose.model('Recs', recSchema);
 
 
-const add = (recObj = {}, user = 0, count = 0, mae = 0) => (
+const add = (recObj = {}, user = 0, count = 0, mae) => (
   new Promise((resolve) => {
+    let updateObj;
+    if (mae === undefined) {
+      updateObj = { recommendations: recObj, count };
+    } else {
+      updateObj = { recommendations: recObj, count, mae };
+    }
     Recs.update(
       { user },
-      { recommendations: recObj, count, mae },
+      updateObj,
       { upsert: true, setDefaultsOnInsert: true },
       () => {
         resolve();
