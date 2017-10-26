@@ -100,15 +100,15 @@ const deleteAll = () => (
   return db.tx(t => t.batch([
       t.none('DELETE FROM purchase'),
       t.none('DELETE FROM products'),
-      t.query('DELETE FROM users')
+      t.none('DELETE FROM users')
   ]))
 );
 
 const indexAll = () => (
   return db.tx(t => t.batch([
       t.none('CREATE INDEX category_idx ON products (category)'),
-      t.query('CREATE INDEX user_idx ON purchase (user_id)'),
-      t.query('CREATE INDEX product_idx ON purchase (product_id)')
+      t.none('CREATE INDEX user_idx ON purchase (user_id)'),
+      t.none('CREATE INDEX product_idx ON purchase (product_id)')
   ]))
 );
 
