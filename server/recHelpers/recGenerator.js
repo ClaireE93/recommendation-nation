@@ -14,6 +14,12 @@ const userObj = {}; // Mapping user id to matrix index
 const productObj = {}; // Mapping product id to matrix index
 const matrix = [];
 
+// const getAllPurchases = () => {
+//   const query = new QueryStream('SELECT * FROM purchase');
+//   const stream = pool.query(query);
+//   stream.pipe(JSONStream.stringify()).pipe(process.stdout);
+// };
+
 class MatrixWriteable extends Writable {
   constructor(inputMatrix) {
     super(inputMatrix);

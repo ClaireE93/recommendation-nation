@@ -39,22 +39,22 @@ const csProducts = new pgp.helpers.ColumnSet([
 
 // Array must be [{ product_id: <int>, user_id: <int>, rating: <float> }, ...]
 const heapInsertPurchases = (array) => {
-  const insert = `${pgp.helpers.insert(array, csPurchases, 'purchase')} ON CONFLICT ON CONSTRAINT no_duplicate_purchase DO UPDATE SET rating = EXCLUDED.rating`;
+  const insert = `${pgp.helpers.insert(array, csPurchases)} ON CONFLICT ON CONSTRAINT no_duplicate_purchase DO UPDATE SET rating = EXCLUDED.rating`;
   return db.none(insert);
 };
 
 const heapInsertUsers = (array) => {
-  const insert = `${pgp.helpers.insert(array, csUsers, 'users')} ON CONFLICT (user_id) DO NOTHING`;
+  const insert = `${pgp.helpers.insert(array, csUsers)} ON CONFLICT (user_id) DO NOTHING`;
   return db.none(insert);
 };
 
 const heapInsertCategories = (array) => {
-  const insert = `${pgp.helpers.insert(array, csCategories, 'categories')} ON CONFLICT (category_id) DO NOTHING`;
+  const insert = `${pgp.helpers.insert(array, csCategories)} ON CONFLICT (category_id) DO NOTHING`;
   return db.none(insert);
 };
 
 const heapInsertProducts = (array) => {
-  const insert = `${pgp.helpers.insert(array, csProducts, 'products')} ON CONFLICT (product_id) DO NOTHING`;
+  const insert = `${pgp.helpers.insert(array, csProducts)} ON CONFLICT (product_id) DO NOTHING`;
   return db.none(insert);
 };
 
