@@ -1,17 +1,61 @@
 const Recommender = require('likely');
+const pg = require('pg');
+const QueryStream = require('pg-query-stream');
+const JSONStream = require('JSONStream');
+const { Writable } = require('stream');
 const db = require('../../db/purchases/index.js');
 // const mongo = require('../../db/recommendations/index.js');
 // const elastic = require('../elasticsearch.js');
+
+const connectionString = process.env.DATABASE_URL || 'postgres://localhost:5432/purchases';
+const client = new pg.Client(connectionString);
 
 const userObj = {}; // Mapping user id to matrix index
 const productObj = {}; // Mapping product id to matrix index
 const matrix = [];
 
+class MatrixWriteable extends Writable {
+  constructor(inputMatrix) {
+    super(inputMatrix);
+    this.matrix = inputMatrix;
+  }
+
+  _write(chunk, encoding, next) {
+    const chunkStr = chunk.toString();
+    let objStr = '';
+    let pointer = 0;
+    while (pointer < chunkStr.length && chunkStr[pointer] !== '{') {
+      pointer += 1;
+    }
+    objStr = chunkStr.slice(pointer);
+    if (objStr.length < 2) {
+      next();
+      return;
+    }
+    const obj = JSON.parse(objStr);
+    const row = userObj[obj.user_id];
+    const col = productObj[obj.product_id];
+    this.matrix[row][col] = obj.rating;
+    next();
+  }
+}
+
+// TODO: Make node stream Writeable class that mutates matrix with input
+const getPurchases = () => (
+  new Promise((resolve) => {
+    client.connect();
+    const query = new QueryStream('SELECT * FROM purchase');
+    const stream = client.query(query);
+    stream.on('end', () => {
+      client.end();
+      resolve();
+    });
+    // stream.pipe(JSONStream.stringify()).pipe(process.stdout);
+    stream.pipe(JSONStream.stringify()).pipe(new MatrixWriteable(matrix));
+  })
+);
+
 const generateMatrix = () => {
-  // Get all users
-  // Get all products
-  // Fill everything in with zeroes
-  // get all purchases and fill in matrix
   let users;
   let products;
   let purchases;
@@ -32,13 +76,13 @@ const generateMatrix = () => {
   };
 
   const fillMatrix = () => {
+    console.log('filling matrix');
     purchases.forEach((purchase) => {
-      const row = userObj[Number(purchase.user_id)];
-      const col = productObj[Number(purchase.product_id)];
-      matrix[row][col] = purchase.rating;
+      matrix[userObj[purchase.user_id]][productObj[purchase.product_id]] = purchase.rating;
     });
 
     purchases = [];
+    console.log('matrix filled');
     return matrix;
   };
 
@@ -50,12 +94,12 @@ const generateMatrix = () => {
     .then((data) => {
       products = data.rows;
       buildMatrix();
-      return db.getAllPurchases();
+      return getPurchases();
     })
-    .then((data) => {
-      purchases = data.rows;
-      fillMatrix();
-    })
+    // .then((data) => {
+    //   purchases = data.rows;
+    //   fillMatrix();
+    // })
     .catch((err) => {
       throw err;
     });

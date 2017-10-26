@@ -31,6 +31,7 @@ const sendElasticsearchRandom = () => {
     number: Math.ceil(Math.random() * 5),
     mae: Math.random() * 5,
   };
+
   elastic.addRec(obj);
 };
 

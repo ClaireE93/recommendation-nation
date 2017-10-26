@@ -1,6 +1,8 @@
 const pgp = require('pg-promise')({
   capSQL: true, // generate capitalized SQL
 });
+const QueryStream = require('pg-query-stream');
+const JSONStream = require('JSONStream');
 
 // See https://github.com/brianc/node-pg-pool for possible url parsing issues
 // NOTE: Fix this for deployment
@@ -68,9 +70,28 @@ const getAllCategories = () => (
   return db.any('SELECT * FROM categories')
 );
 
-const getAllPurchases = () => (
-  return db.any('SELECT * FROM purchases')
-);
+// const getAllPurchases = () => (
+//   pool.query('SELECT * FROM purchase')
+// );
+const getAllPurchases = () => {
+  const query = new QueryStream('SELECT * FROM purchase');
+  const stream = pool.query(query);
+  stream.pipe(JSONStream.stringify()).pipe(process.stdout);
+};
+
+// var pg = require('pg')
+// var QueryStream = require('pg-query-stream')
+// var JSONStream = require('JSONStream')
+
+//pipe 1,000,000 rows to stdout without blowing up your memory usage
+// pg.connect(function(err, client, done) {
+//   if(err) throw err;
+//   var query = new QueryStream('SELECT * FROM generate_series(0, $1) num', [1000000])
+//   var stream = client.query(query)
+//   //release the client when the stream is finished
+//   stream.on('end', done)
+//   stream.pipe(JSONStream.stringify()).pipe(process.stdout)
+// })
 
 const addUser = user => (
   return db.none(`INSERT INTO users (user_id) VALUES ($/user/) ON CONFLICT (user_id) DO NOTHING`, {user})

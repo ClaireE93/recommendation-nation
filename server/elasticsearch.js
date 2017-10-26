@@ -52,9 +52,11 @@ const addRec = rec => (
   elasticClient.index({
     index: indexName,
     type: 'recommendation',
+    id: rec.user_id,
     body: {
       number: rec.number,
       user: rec.user_id,
+      mae: rec.mae,
     },
   })
 );
