@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const { expect } = require('chai');
 const db = require('../db/purchases/index.js');
 const mongo = require('../db/recommendations/index.js');
+const { Recs } = require('../db/recommendations/setup.js');
 
 describe('Purchases Database Tests', () => {
   let client;
@@ -179,7 +180,6 @@ describe('Purchases Database Tests', () => {
 });
 
 describe('Recommendation Database Tests', () => {
-  const { Recs } = mongo;
   before((done) => {
     mongoose.createConnection('mongodb://localhost/recstest', done);
   });
@@ -200,14 +200,16 @@ describe('Recommendation Database Tests', () => {
   });
 
   it('Should have a working add and fetch function', (done) => {
-    mongo.add({ 1: 1.5 }, 10, 1, () => {
-      const user = 10;
-      mongo.fetch(user, (err, data) => {
+    mongo.add({ 1: 1.5 }, 10, 1)
+      .then(() => {
+        const user = 10;
+        return mongo.fetch(user);
+      })
+      .then((data) => {
         expect(data.recommendations).to.deep.equal({ 1: 1.5 });
         expect(data.user).to.equal(10);
         done();
       });
-    });
   });
 
   after((done) => {
