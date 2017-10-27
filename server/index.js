@@ -2,7 +2,10 @@ const express = require('express');
 const morgan = require('morgan');
 const bodyParser = require('body-parser');
 const elastic = require('./elasticsearch');
-const queueSetup = require('../queue/createQueues');
+const mongo = require('../db/recommendations');
+const { createPurchase } = require('../generators/livePurchases.js');
+const { createRequest } = require('../generators/liveRequests.js');
+const { receivePurchases, receiveRequests } = require('../queue/fetchMessages.js');
 
 const app = express();
 app.use(morgan('dev'));
@@ -23,33 +26,29 @@ const initElasticsearch = () => {
     });
 };
 
-initElasticsearch();
+// initElasticsearch();
+createPurchase();
+createRequest();
+receivePurchases();
 
-// Set up queues
-const setupQueues = () => {
-  let purchaseUrl;
-  let requestUrl;
-  queueSetup.init('purchases')
-    .then((newUrl) => {
-      purchaseUrl = newUrl;
-      return queueSetup.init('recRequests');
-    })
-    .then((newUrl) => {
-      requestUrl = newUrl;
-    });
+// Generate purchase every minute
+// setInterval(createPurchase, 60000);
+
+// Generate request every minute
+// setInterval(createRequest, 60000);
+
+
+const sendElasticsearchRandom = () => {
+  const obj = {
+    user_id: Math.ceil(Math.random() * 10000),
+    number: Math.ceil(Math.random() * 5),
+    mae: Math.random() * 5,
+  };
+
+  elastic.addRec(obj);
 };
 
-
-// const sendElasticsearchRandom = () => {
-//   const obj = {
-//     user_id: Math.ceil(Math.random() * 10000),
-//     number: Math.ceil(Math.random() * 5),
-//     mae: Math.random() * 5,
-//   };
-//
-//   elastic.addRec(obj);
-// };
-//
+// Generate kibana data
 // setInterval(() => {
 //   sendElasticsearchRandom();
 // }, 1000);

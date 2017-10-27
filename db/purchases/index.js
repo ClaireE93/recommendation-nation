@@ -62,30 +62,36 @@ const getAllUsers = () => (
   db.any('SELECT * FROM users')
 );
 
+const getOneUser = user => (
+  db.any(`SELECT * FROM users WHERE user_id='${user}'`)
+);
+
 const getAllProducts = () => (
   db.any('SELECT * FROM products')
+);
+
+const getOneProduct = product => (
+  db.any(`SELECT * FROM products WHERE product_id='${product}'`)
 );
 
 const getAllCategories = () => (
   db.any('SELECT * FROM categories')
 );
 
-const getAllPurchases = () => {
-  const query = new QueryStream('SELECT * FROM purchase');
-  const stream = pool.query(query);
-  stream.pipe(JSONStream.stringify()).pipe(process.stdout);
-};
+const getOneCategory = category => (
+  db.any(`SELECT * FROM categories WHERE category_id='${category}'`)
+);
 
 const addUser = user => (
-  db.none(`INSERT INTO users (user_id) VALUES ($/user/) ON CONFLICT (user_id) DO NOTHING`, {user})
+  db.none('INSERT INTO users (user_id) VALUES ($/user/) ON CONFLICT (user_id) DO NOTHING', { user })
 );
 
 const addProduct = (product, category) => (
-  db.none(`INSERT INTO products (product_id, category) VALUES ($/product/, $/category/) ON CONFLICT (product_id) DO NOTHING`, {product, category})
+  db.none('INSERT INTO products (product_id, category) VALUES ($/product/, $/category/) ON CONFLICT (product_id) DO NOTHING', { product, category })
 );
 
 const addCategory = category => (
-  db.none(`INSERT INTO categories (category_id) VALUES ($/category/) ON CONFLICT (category_id) DO NOTHING`, {category})
+  db.none('INSERT INTO categories (category_id) VALUES ($/category/) ON CONFLICT (category_id) DO NOTHING', { category })
 );
 
 // NOTE: This function overwrites duplicate purchases so only the most recent
@@ -126,11 +132,13 @@ module.exports = {
   getAllUsers,
   getAllProducts,
   getAllCategories,
-  getAllPurchases,
   addUser,
   addProduct,
   addCategory,
   addPurchase,
   deleteAll,
   indexAll,
+  getOneUser,
+  getOneProduct,
+  getOneCategory,
 };

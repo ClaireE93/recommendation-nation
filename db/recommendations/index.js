@@ -24,7 +24,8 @@ const add = (recObj = {}, user = 0, count = 0, mae) => (
     if (mae === undefined) {
       updateObj = { recommendations: recObj, count };
     } else {
-      updateObj = { recommendations: recObj, count, mae };
+      // updateObj = { recommendations: recObj, count, mae };
+      updateObj = { mae };
     }
     Recs.update(
       { user },

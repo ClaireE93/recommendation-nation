@@ -95,3 +95,25 @@ describe('Purchases Database Tests', () => {
       });
   });
 });
+
+// describe('Live Message Generators', () => {
+//   it('should generate live purchases', () => {
+//
+//   });
+//
+//   it('should generate live requests', () => {
+//
+//   });
+//
+//   it('should check for purchases', () => {
+//
+//   });
+//
+//   it('should check for requests', () => {
+//
+//   });
+//
+//   it('should delete messages once they are consumed', () =>{
+//
+//   });
+// });
