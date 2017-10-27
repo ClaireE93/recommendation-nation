@@ -9,6 +9,7 @@ const sqs = new AWS.SQS({ apiVersion: '2012-11-05' });
 
 // mongo.add({ 5: 1.5, 3: 4.3 }, 3, 2 });
 // MAE = sumAllPurchases(abs(actual - expected)) / total
+// Calculate MAE for user
 const calcMAE = (expected = {}, actual) => {
   let tot = 0;
   const sums = [];
@@ -28,6 +29,7 @@ const calcMAE = (expected = {}, actual) => {
 };
 
 // FIXME: Uses hardcoded numbers for now
+// Update user's MAE based on actual purchases
 const updateMAE = (purchases) => {
   let curRecs;
   // FIXME: Remove me when it's not dummy data!
@@ -53,6 +55,8 @@ const updateMAE = (purchases) => {
     });
 };
 
+// See if all purchase elements exist (user, product, category).
+// If they don't exist, add them to DBs
 const checkPurchase = purchase => (
   db.getOneCategory(purchase.category)
     .then((data) => {
@@ -73,6 +77,7 @@ const checkPurchase = purchase => (
 
 );
 
+// Update purchase DB with new purchases
 const updateDB = (purchases) => {
   const user = purchases.user_id;
   const cart = purchases.shopping_cart;
@@ -116,11 +121,11 @@ const params = {
   MessageAttributeNames: [
     'All',
   ],
-  QueueUrl: PURCHASE_URL,
   VisibilityTimeout: 0,
   WaitTimeSeconds: 0,
 };
 
+// Check for new purchases
 const receivePurchases = () => {
   params.QueueUrl = PURCHASE_URL;
 
@@ -144,6 +149,7 @@ const receivePurchases = () => {
   });
 };
 
+// Send user recommendations
 const sendRecs = (object) => {
   const sendParams = {
     DelaySeconds: 10,
@@ -166,6 +172,7 @@ const sendRecs = (object) => {
 // And publish user and recs to the recResponse message bus
 // For now, hard code the user so it pulls the one user that's in the mogno DB
 // Replace with actual user once recommendation service works!
+// Receive requests for user recommendations
 const receiveRequests = () => {
   params.QueueUrl = REC_REQUEST_URL;
 
@@ -176,10 +183,19 @@ const receiveRequests = () => {
       const user = JSON.parse(data.Messages[0].Body).user_id;
       // mongo.fetch(user)
       mongo.fetch(3) // FIXME: Remove for live data
-        .then(recData => (
-          sendRecs(recData)
-        ))
-        .then(() => { // FIXME: Messages aren't all being deleted?
+        .then((recData) => {
+          if (recData) {
+            return sendRecs(recData);
+          }
+          const emptyResp = {
+            user_id: user,
+            recommendations: {},
+            mae: 0,
+            count: 0,
+          };
+          return sendRecs(emptyResp);
+        })
+        .then(() => {
           const deleteParams = {
             QueueUrl: REC_REQUEST_URL,
             ReceiptHandle: data.Messages[0].ReceiptHandle,
@@ -190,6 +206,7 @@ const receiveRequests = () => {
   });
 };
 
+// Go through all incoming messages for given bus
 const processAllMessages = isPurchase => (
   new Promise((resolve, reject) => {
     const QueueUrl = isPurchase ? PURCHASE_URL : REC_REQUEST_URL;
@@ -211,8 +228,24 @@ const processAllMessages = isPurchase => (
   })
 );
 
+const purgeQueue = (url) => {
+  const purgeParams = {
+    QueueUrl: url,
+  };
+  return new Promise((resolve, reject) => {
+    sqs.purgeQueue(purgeParams, (err, data) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(data);
+      }
+    });
+  });
+};
+
 module.exports = {
   receiveRequests,
   receivePurchases,
   processAllMessages,
+  purgeQueue,
 };
