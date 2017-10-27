@@ -97,13 +97,18 @@ const addCategory = category => (
 // NOTE: This function overwrites duplicate purchases so only the most recent
 // purchase and rating are stored
 const addPurchase = (ind, product, user, rating) => (
-  db.tx(t => t.batch([
-    t.none('UPDATE purchase SET rating=$/rating/ WHERE user_id=$/user/ AND product_id=$/product/', { product, user, rating }),
-    t.none(`INSERT INTO purchase (product_id, user_id, rating)
-    SELECT $/product/, $/user/, $/rating/
-    WHERE NOT EXISTS (SELECT 1 FROM purchase WHERE user_id=$/user/ AND product_id=$/product/)
-    `, { user, product, rating }),
-  ]))
+  db.none(`INSERT INTO purchase (user_id, product_id, rating)
+  VALUES ('${user}', '${product}', '${rating}')
+  ON CONFLICT ON CONSTRAINT no_duplicate_purchase DO UPDATE SET rating = EXCLUDED.rating
+  `)
+  // db.none('INSERT INTO purchase (user_id, product_id, rating) VALUES ($/category/) ON CONFLICT (category_id) DO NOTHING', { category })
+  // db.tx(t => t.batch([
+  //   t.none('UPDATE purchase SET rating=$/rating/ WHERE user_id=$/user/ AND product_id=$/product/', { product, user, rating }),
+  //   t.none(`INSERT INTO purchase (product_id, user_id, rating)
+  //   SELECT $/product/, $/user/, $/rating/
+  //   WHERE NOT EXISTS (SELECT 1 FROM purchase WHERE user_id=$/user/ AND product_id=$/product/)
+  //   `, { user, product, rating }),
+  // ]))
 );
 
 const deleteAll = () => (

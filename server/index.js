@@ -5,7 +5,7 @@ const elastic = require('./elasticsearch');
 const mongo = require('../db/recommendations');
 const { createPurchase } = require('../generators/livePurchases.js');
 const { createRequest } = require('../generators/liveRequests.js');
-const { receivePurchases, receiveRequests } = require('../queue/fetchMessages.js');
+const { receivePurchases, receiveRequests, processAllPurchases } = require('../queue/fetchMessages.js');
 
 const app = express();
 app.use(morgan('dev'));
@@ -29,7 +29,10 @@ const initElasticsearch = () => {
 // initElasticsearch();
 createPurchase();
 createRequest();
-receivePurchases();
+
+// receivePurchases();
+processAllPurchases();
+
 
 // Generate purchase every minute
 // setInterval(createPurchase, 60000);

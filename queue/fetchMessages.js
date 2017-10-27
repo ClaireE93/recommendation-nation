@@ -70,6 +70,7 @@ const checkPurchase = purchase => (
       }
       return data;
     })
+
 );
 
 const updateDB = (purchases) => {
@@ -92,7 +93,10 @@ const updateDB = (purchases) => {
         arr.push(promise);
       });
       return Promise.all(arr);
-    });
+    })
+    .catch((err) => {
+      console.log('ERROR IN UPDATE DB', err);
+    })
 };
 
 const deleteMessage = deleteParams => (
@@ -121,13 +125,15 @@ const receivePurchases = () => {
     WaitTimeSeconds: 0,
   };
 
+
+
   sqs.receiveMessage(params, (err, data) => {
     if (err) {
       throw err;
     } else {
       // console.log('message received', data);
       const body = JSON.parse(data.Messages[0].Body);
-      updateMAE(body)
+      return updateMAE(body)
         .then(() => {
           updateDB(body);
         })
@@ -137,6 +143,9 @@ const receivePurchases = () => {
             ReceiptHandle: data.Messages[0].ReceiptHandle,
           };
           return deleteMessage(deleteParams);
+        })
+        .catch((err) => {
+          console.log('ERROR IN RECEIVE MESSAGE', err);
         });
     }
   });
@@ -146,7 +155,28 @@ const receiveRequests = () => {
 
 };
 
+const processAllPurchases = () => (
+  new Promise((resolve, reject) => {
+    sqs.getQueueAttributes({ AttributeNames: ['ApproximateNumberOfMessages'], QueueUrl: PURCHASE_URL }, (err, data) => {
+      const num = data.Attributes.ApproximateNumberOfMessages;
+      const promiseArr = [];
+      for (let i = 0; i < num; i += 1) {
+        promiseArr.push(receivePurchases());
+      }
+      Promise.all(promiseArr)
+        .then(() => {
+          resolve();
+        })
+        .catch((err) => {
+          console.log('ERROR IN PROMISE ALL', err);
+          reject();
+        });
+    });
+  })
+);
+
 module.exports = {
   receiveRequests,
   receivePurchases,
+  processAllPurchases,
 };
