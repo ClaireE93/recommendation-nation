@@ -1,5 +1,5 @@
 const AWS = require('aws-sdk');
-const { REC_REQUEST_URL, PURCHASE_URL } = require('../config/messageUrls.js');
+const { REC_REQUEST_URL, PURCHASE_URL, REC_SEND_URL } = require('../config/messageUrls.js');
 const db = require('../db/purchases');
 const mongo = require('../db/recommendations');
 const elastic = require('../server/elasticsearch');
@@ -93,10 +93,7 @@ const updateDB = (purchases) => {
         arr.push(promise);
       });
       return Promise.all(arr);
-    })
-    .catch((err) => {
-      console.log('ERROR IN UPDATE DB', err);
-    })
+    });
 };
 
 const deleteMessage = deleteParams => (
@@ -111,27 +108,26 @@ const deleteMessage = deleteParams => (
   })
 );
 
+const params = {
+  AttributeNames: [
+    'SentTimestamp',
+  ],
+  MaxNumberOfMessages: 1,
+  MessageAttributeNames: [
+    'All',
+  ],
+  QueueUrl: PURCHASE_URL,
+  VisibilityTimeout: 0,
+  WaitTimeSeconds: 0,
+};
+
 const receivePurchases = () => {
-  const params = {
-    AttributeNames: [
-      'SentTimestamp',
-    ],
-    MaxNumberOfMessages: 1,
-    MessageAttributeNames: [
-      'All',
-    ],
-    QueueUrl: PURCHASE_URL,
-    VisibilityTimeout: 0,
-    WaitTimeSeconds: 0,
-  };
-
-
+  params.QueueUrl = PURCHASE_URL;
 
   sqs.receiveMessage(params, (err, data) => {
     if (err) {
       throw err;
     } else {
-      // console.log('message received', data);
       const body = JSON.parse(data.Messages[0].Body);
       return updateMAE(body)
         .then(() => {
@@ -143,32 +139,72 @@ const receivePurchases = () => {
             ReceiptHandle: data.Messages[0].ReceiptHandle,
           };
           return deleteMessage(deleteParams);
-        })
-        .catch((err) => {
-          console.log('ERROR IN RECEIVE MESSAGE', err);
         });
     }
   });
 };
 
-const receiveRequests = () => {
+const sendRecs = (object) => {
+  const sendParams = {
+    DelaySeconds: 10,
+    MessageBody: JSON.stringify(object),
+    QueueUrl: REC_SEND_URL,
+  };
 
+  return new Promise((resolve, reject) => {
+    sqs.sendMessage(sendParams, (err, data) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(data);
+      }
+    });
+  });
 };
 
-const processAllPurchases = () => (
+// TODO: This function should fetch recommendations by user id from mongo
+// And publish user and recs to the recResponse message bus
+// For now, hard code the user so it pulls the one user that's in the mogno DB
+// Replace with actual user once recommendation service works!
+const receiveRequests = () => {
+  params.QueueUrl = REC_REQUEST_URL;
+
+  sqs.receiveMessage(params, (err, data) => {
+    if (err) {
+      throw err;
+    } else {
+      const user = JSON.parse(data.Messages[0].Body).user_id;
+      // mongo.fetch(user)
+      mongo.fetch(3) // FIXME: Remove for live data
+        .then(recData => (
+          sendRecs(recData)
+        ))
+        .then(() => { // FIXME: Messages aren't all being deleted?
+          const deleteParams = {
+            QueueUrl: REC_REQUEST_URL,
+            ReceiptHandle: data.Messages[0].ReceiptHandle,
+          };
+          return deleteMessage(deleteParams);
+        });
+    }
+  });
+};
+
+const processAllMessages = isPurchase => (
   new Promise((resolve, reject) => {
-    sqs.getQueueAttributes({ AttributeNames: ['ApproximateNumberOfMessages'], QueueUrl: PURCHASE_URL }, (err, data) => {
+    const QueueUrl = isPurchase ? PURCHASE_URL : REC_REQUEST_URL;
+    const func = isPurchase ? receivePurchases : receiveRequests;
+    sqs.getQueueAttributes({ AttributeNames: ['ApproximateNumberOfMessages'], QueueUrl }, (err, data) => {
       const num = data.Attributes.ApproximateNumberOfMessages;
       const promiseArr = [];
       for (let i = 0; i < num; i += 1) {
-        promiseArr.push(receivePurchases());
+        promiseArr.push(func());
       }
       Promise.all(promiseArr)
         .then(() => {
           resolve();
         })
-        .catch((err) => {
-          console.log('ERROR IN PROMISE ALL', err);
+        .catch(() => {
           reject();
         });
     });
@@ -178,5 +214,5 @@ const processAllPurchases = () => (
 module.exports = {
   receiveRequests,
   receivePurchases,
-  processAllPurchases,
+  processAllMessages,
 };

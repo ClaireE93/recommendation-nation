@@ -115,6 +115,7 @@ const deleteAll = () => (
   db.tx(t => t.batch([
     t.none('DELETE FROM purchase'),
     t.none('DELETE FROM products'),
+    t.none('DELETE FROM categories'),
     t.none('DELETE FROM users'),
   ]))
 );
