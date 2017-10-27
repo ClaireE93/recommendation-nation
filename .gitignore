@@ -1,8 +1,6 @@
 # Project specific
+config/messageUrls.js
 config/development.json
-config/production.json
-config/staging.json
-config/test.json
 
 # OS X
 .DS_Store

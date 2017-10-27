@@ -4,18 +4,15 @@ const mongoose = require('mongoose');
 const { expect } = require('chai');
 const db = require('../db/purchases/index.js');
 const mongo = require('../db/recommendations/index.js');
+const { Recs } = require('../db/recommendations/setup.js');
 
 describe('Purchases Database Tests', () => {
   let client;
-  const connectionString = process.env.DATABASE_URL || 'postgres://localhost:5432/purchases';
+  const connectionString = 'postgres://localhost:5432/purchases';
 
   beforeEach((done) => {
     client = new pg.Client(connectionString);
-    client.connect();
-    db.deleteAll()
-      .then(() => {
-        done();
-      });
+    client.connect(done);
   });
 
   afterEach(() => {
@@ -59,7 +56,6 @@ describe('Purchases Database Tests', () => {
       })
       .then((results) => {
         expect(results.rows.length).to.equal(1);
-        expect(results.rows[0].category).to.equal(category);
         done();
       });
   });
@@ -79,7 +75,7 @@ describe('Purchases Database Tests', () => {
         db.addPurchase(null, product, user, 5)
       ))
       .then(() => {
-        const queryStr = "SELECT * FROM purchase WHERE user_id = '1'";
+        const queryStr = "SELECT * FROM purchase WHERE user_id = '1' AND product_id = '5'";
         return client.query(queryStr);
       })
       .then((results) => {
@@ -104,7 +100,7 @@ describe('Purchases Database Tests', () => {
         db.addPurchase(null, product, user, 5)
       ))
       .then(() => {
-        const queryStr = "SELECT * FROM purchase WHERE user_id = '1'";
+        const queryStr = "SELECT * FROM purchase WHERE user_id = '1' AND product_id = '5'";
         return client.query(queryStr);
       })
       .then((results) => {
@@ -115,7 +111,7 @@ describe('Purchases Database Tests', () => {
         db.addPurchase(null, product, user, 1)
       ))
       .then(() => {
-        const queryStr = "SELECT * FROM purchase WHERE user_id = '1'";
+        const queryStr = "SELECT * FROM purchase WHERE user_id = '1' AND product_id = '5'";
         return client.query(queryStr);
       })
       .then((results) => {
@@ -143,48 +139,47 @@ describe('Purchases Database Tests', () => {
 
     db.heapInsertUsers(users)
       .then(() => {
-        const queryStr = 'SELECT count(*) FROM users';
+        const queryStr = "SELECT * FROM users WHERE user_id = '10'";
         return client.query(queryStr);
       })
       .then(results => (
-        expect(results.rows[0].count).to.equal('20')
+        expect(results.rows.length).to.equal(1)
       ))
       .then(() => (
         db.heapInsertCategories(categories)
       ))
       .then(() => {
-        const queryStr = 'SELECT count(*) FROM categories';
+        const queryStr = "SELECT * FROM categories WHERE category_id = '10'";
         return client.query(queryStr);
       })
       .then(results => (
-        expect(results.rows[0].count).to.equal('20')
+        expect(results.rows.length).to.equal(1)
       ))
       .then(() => (
         db.heapInsertProducts(products)
       ))
       .then(() => {
-        const queryStr = 'SELECT count(*) FROM products';
+        const queryStr = "SELECT * FROM products WHERE product_id = '10'";
         return client.query(queryStr);
       })
       .then(results => (
-        expect(results.rows[0].count).to.equal('20')
+        expect(results.rows.length).to.equal(1)
       ))
       .then(() => (
         db.heapInsertPurchases(purchases)
       ))
       .then(() => {
-        const queryStr = 'SELECT count(*) FROM purchase';
+        const queryStr = "SELECT * FROM purchase WHERE user_id = '10' AND product_id = '10'";
         return client.query(queryStr);
       })
       .then((results) => {
-        expect(results.rows[0].count).to.equal('20');
+        expect(results.rows.length).to.equal(1);
         done();
       });
   });
 });
 
 describe('Recommendation Database Tests', () => {
-  const { Recs } = mongo;
   before((done) => {
     mongoose.createConnection('mongodb://localhost/recstest', done);
   });
@@ -205,14 +200,16 @@ describe('Recommendation Database Tests', () => {
   });
 
   it('Should have a working add and fetch function', (done) => {
-    mongo.add({ 1: 1.5 }, 10, 1, () => {
-      const user = 10;
-      mongo.fetch(user, (err, data) => {
+    mongo.add({ 1: 1.5 }, 10, 1)
+      .then(() => {
+        const user = 10;
+        return mongo.fetch(user);
+      })
+      .then((data) => {
         expect(data.recommendations).to.deep.equal({ 1: 1.5 });
         expect(data.user).to.equal(10);
         done();
       });
-    });
   });
 
   after((done) => {

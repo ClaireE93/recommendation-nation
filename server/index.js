@@ -2,6 +2,10 @@ const express = require('express');
 const morgan = require('morgan');
 const bodyParser = require('body-parser');
 const elastic = require('./elasticsearch');
+const mongo = require('../db/recommendations');
+const { createPurchase } = require('../generators/livePurchases.js');
+const { createRequest } = require('../generators/liveRequests.js');
+const { processAllMessages } = require('../queue/fetchMessages.js');
 
 const app = express();
 app.use(morgan('dev'));
@@ -14,6 +18,7 @@ const initElasticsearch = () => {
       if (exists) {
         return elastic.deleteIndex();
       }
+      return exists;
     })
     .then(elastic.initIndex)
     .then(elastic.initMapping)
@@ -22,35 +27,44 @@ const initElasticsearch = () => {
     });
 };
 
-initElasticsearch();
+// NOTE: Run this function ONCE on setup to setup ElasticSearch indeces
+// FIXME: Move this to another file that is already run once on setup?
+// Maybe to db/purchases/setup.js
+// initElasticsearch();
 
+// Simulate message bus requests once a minute.
+setInterval(() => {
+  createPurchase();
+  createRequest();
+}, 6000);
+
+const DAILY = 1000 * 60 * 60 * 24;
+
+// Process all messages once a day
+setInterval(() => {
+  processAllMessages(true); // Process purchases
+  processAllMessages(false); // Process requests
+}, DAILY);
 
 const sendElasticsearchRandom = () => {
   const obj = {
     user_id: Math.ceil(Math.random() * 10000),
     number: Math.ceil(Math.random() * 5),
+    mae: Math.random() * 5,
   };
+
   elastic.addRec(obj);
 };
 
-setInterval(() => {
-  sendElasticsearchRandom();
-}, 1000);
+// Generate kibana data
+// setInterval(() => {
+//   sendElasticsearchRandom();
+// }, 1000);
 
 const generateRecommendations = () => {
   // TODO: Create m x n matrix
-  // Generate initial recs
+  // Generate recs
   // Populate rec DB
-};
-
-const updatePurchases = () => {
-  // TODO: Grab messages from message bus, parse, update db
-  // update recommendations
-  // EXTRA: Run analysis on recs
-};
-
-const checkForRequests = () => {
-  // TODO: Check message bus for requests for user recommendations
 };
 
 const port = process.env.PORT || 3000;

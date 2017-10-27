@@ -1,9 +1,4 @@
-const elasticsearch = require('elasticsearch');
-
-const elasticClient = new elasticsearch.Client({
-  host: 'localhost:9200',
-  log: 'info',
-});
+const { elasticClient } = require('./setup.js');
 
 const indexName = 'recs';
 
@@ -42,6 +37,7 @@ const initMapping = () => (
       properties: {
         number: { type: 'integer' },
         user: { type: 'integer' },
+        mae: { type: 'float' },
       },
     },
   })
@@ -51,9 +47,11 @@ const addRec = rec => (
   elasticClient.index({
     index: indexName,
     type: 'recommendation',
+    id: rec.user_id,
     body: {
       number: rec.number,
       user: rec.user_id,
+      mae: rec.mae,
     },
   })
 );

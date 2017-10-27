@@ -6,7 +6,7 @@ const gen = require('../generators/historic.js');
 
 describe('Purchases Database Tests', () => {
   let client;
-  const connectionString = process.env.DATABASE_URL || 'postgres://localhost:5432/purchases';
+  const connectionString = 'postgres://localhost:5432/purchases';
 
   beforeEach((done) => {
     client = new pg.Client(connectionString);
@@ -14,6 +14,9 @@ describe('Purchases Database Tests', () => {
     db.deleteAll()
       .then(() => {
         done();
+      })
+      .catch((err) => {
+        throw err;
       });
   });
 
@@ -31,6 +34,9 @@ describe('Purchases Database Tests', () => {
       .then((results) => {
         expect(results.rows.length).to.equal(testNum);
         done();
+      })
+      .catch((err) => {
+        throw err;
       });
   });
 
@@ -89,3 +95,25 @@ describe('Purchases Database Tests', () => {
       });
   });
 });
+
+// describe('Live Message Generators', () => {
+//   it('should generate live purchases', () => {
+//
+//   });
+//
+//   it('should generate live requests', () => {
+//
+//   });
+//
+//   it('should check for purchases', () => {
+//
+//   });
+//
+//   it('should check for requests', () => {
+//
+//   });
+//
+//   it('should delete messages once they are consumed', () =>{
+//
+//   });
+// });
