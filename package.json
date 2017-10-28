@@ -50,6 +50,7 @@
     "pg": "^7.3.0",
     "pg-promise": "^7.0.3",
     "pg-query-stream": "^1.1.1",
-    "pgtest": "^0.2.2"
+    "pgtest": "^0.2.2",
+    "python-shell": "^0.4.0"
   }
 }

@@ -3,6 +3,7 @@ const pg = require('pg');
 const QueryStream = require('pg-query-stream');
 const JSONStream = require('JSONStream');
 const { Writable } = require('stream');
+const PythonShell = require('python-shell');
 const db = require('../../db/purchases/index.js');
 const mongo = require('../../db/recommendations/index.js');
 const elastic = require('../elasticsearch/index.js');
@@ -91,25 +92,27 @@ const generateMatrix = () => {
 const parseRecs = (recs) => {
   const result = {};
   recs.forEach((rec) => {
-    result[rec[0]] = rec[1];
+    const [product, rating] = rec;
+    result[product] = rating;
   });
 
   return result;
 };
 
+// FIXME: This needs to be in Python using Scikit
 const generateRecs = () => {
   // const rowLabels = [];
   // const colLabels = [];
   const promiseArr = [];
-  const Model = Recommender.buildModel(matrix);
-  Object.keys(userObj).forEach((user) => {
-    const recs = Model.recommendations(userObj[user]);
-    const obj = parseRecs(recs);
-    const promiseMongo = mongo.add(obj, user, recs.length);
-    const promiseElastic = elastic.addRec({ user_id: user, number: recs.length, mae: 0 });
-    promiseArr.push(promiseMongo);
-    promiseArr.push(promiseElastic);
-  });
+  // const Model = Recommender.buildModel(matrix);
+  // Object.keys(userObj).forEach((user) => {
+  //   const recs = Model.recommendations(userObj[user]);
+  //   const obj = parseRecs(recs);
+  //   const promiseMongo = mongo.add(obj, user, recs.length);
+  //   const promiseElastic = elastic.addRec({ user_id: user, number: recs.length, mae: 0 });
+  //   promiseArr.push(promiseMongo);
+  //   promiseArr.push(promiseElastic);
+  // });
 
 
   // TODO: Get recs for every user and store to mongo
@@ -119,22 +122,99 @@ const generateRecs = () => {
 };
 
 const populateRecommendations = () => {
-  let start = Date.now();
-  let end;
-  console.log('started at', new Date(start).toString());
-  generateMatrix()
-    .then(() => {
-      end = Date.now();
-      console.log('finished making base matrix', new Date(end).toString());
-      console.log('finished in ms', end - start);
-      start = Date.now();
-      return generateRecs();
-    })
-    .then(() => {
-      end = Date.now();
-      console.log('finished at', new Date(end).toString());
-      console.log('finished in ms', end - start)
-    })
+  PythonShell.defaultOptions = { scriptPath: __dirname };
+  // const path = __dirname + '/svd.py';
+  const path = 'svd.py';
+  const pyshell = new PythonShell(path);
+  const arr =[];
+  for (let i = 0; i < 5; i += 1) {
+    const cur = [];
+    for (let j = 0; j < 5; j += 1) {
+      cur.push(Math.random());
+    }
+    arr.push(cur);
+  }
+  const numCategories = 3 // FIXME: Get actual count from DB
+  let [uStr, sigmaStr, vtStr] = ['', '', ''];
+  let [isU, isSigma, isVT] = [false, false, false];
+  let u;
+  let sigma;
+  let vt;
+  // let uStr = '';
+  // let sigmaStr = '';
+  // let vtStr = '';
+  // let isU = false;
+  // let isSigma = false;
+  // let isVT = false;
+
+  // pyshell.send(JSON.stringify(arr)); // NOTE: Example of how to send something
+  pyshell.send(JSON.stringify([numCategories, arr]));
+
+  pyshell.on('message', (message) => {
+    // received a message sent from the Python script (a simple "print" statement)
+    console.log('MESSAGE IS', message); //JSON, must parse
+    if (message === 'U') {
+      isU = true;
+    } else if (message === 'SIGMA') {
+      isU = false;
+      isSigma = true;
+    } else if (message === 'VT') {
+      isSigma = false;
+      isVT = true;
+    } else if (message === 'DONE') {
+      isVT = false;
+    } else if (isU) {
+      uStr += message;
+    } else if (isSigma) {
+      sigmaStr += message;
+    } else if (isVT) {
+      vtStr += message;
+    }
+  });
+
+
+  // end the input stream and allow the process to exit
+  pyshell.end((err) => {
+    if (err) {
+      throw err;
+    };
+    u = JSON.parse(uStr);
+    sigma = JSON.parse(sigmaStr);
+    vt = JSON.parse(vtStr);
+  });
+  // const options = {
+  //   mode: 'text',
+  //   pythonPath: '/usr/bin/python',
+  //   pythonOptions: ['-u'],
+  //   scriptPath: __dirname,
+  //   args: ['value1', 'value2', 'value3'],
+  // };
+  //
+  // PythonShell.run('svd.py', options, (err, results) => {
+  //   if (err) throw err;
+  //   // results is an array consisting of messages collected during execution
+  //   console.log('results: %j', results);
+  // });
+
+
+
+
+  // let start = Date.now();
+  // let end;
+  // console.log('started at', new Date(start).toString());
+  // generateMatrix()
+  //   .then(() => {
+  //     end = Date.now();
+  //     console.log('finished making base matrix', new Date(end).toString());
+  //     console.log('finished in ms', end - start);
+  //     start = Date.now();
+  //     return generateRecs();
+  //   })
+  //   .then(() => {
+  //     end = Date.now();
+  //     console.log('finished at', new Date(end).toString());
+  //     console.log('finished in ms', end - start)
+  //   })
 };
 
 populateRecommendations();
