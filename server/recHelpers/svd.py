@@ -20,12 +20,16 @@ def main():
     # Convert list to numpy array for svd operation
     npa = np.asarray(matrix, dtype=np.float32)
     U, Sigma, VT = randomized_svd(npa, n_components=components, n_iter=5, random_state=None)
+    # Convert sigma from flat array to dimensional array with diagonals filled in
+    Sigma = np.diag(Sigma)
     print "U"
-    print(np.array2string(U, separator=', '))
+    # print(np.array2string(U, separator=', '))
+    print(str(U.tolist()))
     print "SIGMA"
-    print(np.array2string(Sigma, separator=', '))
+    print(str(Sigma.tolist()))
     print "VT"
-    print(np.array2string(VT, separator=', '))
+    # print(np.array2string(VT, separator=', '))
+    print(str(VT.tolist()))
     print "DONE"
 
     #get our data as an array from read_in()
