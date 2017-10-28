@@ -2,8 +2,8 @@ const historic = require('./historic.js');
 const db = require('../db/purchases/index.js');
 //
 // const setupParams = {
-//   users: 50000,
-//   products: 10000,
+//   users: 50000, // NOTE: Play with this number for sparcity problems
+//   products: 1000, // NOTE: Play with this number for sparcity problems
 //   categories: 1000,
 //   purchases: 5000000,
 // };

@@ -4,6 +4,7 @@ const QueryStream = require('pg-query-stream');
 const JSONStream = require('JSONStream');
 const { Writable } = require('stream');
 const PythonShell = require('python-shell');
+const fs = require("fs");
 const db = require('../../db/purchases/index.js');
 const mongo = require('../../db/recommendations/index.js');
 const elastic = require('../elasticsearch/index.js');
@@ -123,52 +124,53 @@ const generateRecs = () => {
 
 const populateRecommendations = () => {
   PythonShell.defaultOptions = { scriptPath: __dirname };
-  // const path = __dirname + '/svd.py';
   const path = 'svd.py';
   const pyshell = new PythonShell(path);
-  const arr =[];
-  for (let i = 0; i < 5; i += 1) {
+  const arr = [];
+  const users = {};
+  const products = {};
+  const final = [];
+  const totUsers = 10;
+  const totProd = 10;
+  for (let i = 0; i < totUsers; i += 1) {
     const cur = [];
-    for (let j = 0; j < 5; j += 1) {
-      cur.push(Math.random());
+    users[i + 1] = i; // Map user IDs and products IDs to indeces (done in BuildMatriix)
+    products[i + 1] = i;
+    for (let j = 0; j < totProd; j += 1) {
+      if (Math.random() > 0.5) {
+        cur.push((Math.random() * 6).toFixed(5));
+      } else {
+        cur.push(0);
+      }
     }
     arr.push(cur);
   }
-  const numCategories = 3 // FIXME: Get actual count from DB
-  let [uStr, sigmaStr, vtStr] = ['', '', ''];
-  let [isU, isSigma, isVT] = [false, false, false];
-  let u;
-  let sigma;
-  let vt;
-  // let uStr = '';
-  // let sigmaStr = '';
-  // let vtStr = '';
-  // let isU = false;
-  // let isSigma = false;
-  // let isVT = false;
+  // FIXME: This should be between 20 and 100. This number should increase
+  // Using MAE feedback
+  const numCategories = 20;
+  let predStr = '';
+  let isPred = false;
+  let predictions;
+  const start = Date.now();
+  // Slice array down and send
+  const cuts = Math.floor(arr.length / 10000)
+  const half = arr.slice(0, Math.floor(totUsers / 2));
+  const half2 = arr.slice(Math.floor(totUsers / 2));
 
-  // pyshell.send(JSON.stringify(arr)); // NOTE: Example of how to send something
-  pyshell.send(JSON.stringify([numCategories, arr]));
+  pyshell.send(JSON.stringify(numCategories));
+  pyshell.send(JSON.stringify(half));
+  pyshell.send(JSON.stringify(half2));
 
   pyshell.on('message', (message) => {
     // received a message sent from the Python script (a simple "print" statement)
-    console.log('MESSAGE IS', message); //JSON, must parse
-    if (message === 'U') {
-      isU = true;
-    } else if (message === 'SIGMA') {
-      isU = false;
-      isSigma = true;
-    } else if (message === 'VT') {
-      isSigma = false;
-      isVT = true;
+    console.log('MESSAGE IS', message);
+    if (message === 'PREDICTIONS') {
+      isPred = true;
     } else if (message === 'DONE') {
-      isVT = false;
-    } else if (isU) {
-      uStr += message;
-    } else if (isSigma) {
-      sigmaStr += message;
-    } else if (isVT) {
-      vtStr += message;
+      isPred = false;
+    } else if (isPred) {
+      final.push(JSON.parse(message));
+      // predStr += message;
     }
   });
 
@@ -177,26 +179,16 @@ const populateRecommendations = () => {
   pyshell.end((err) => {
     if (err) {
       throw err;
-    };
-    u = JSON.parse(uStr);
-    sigma = JSON.parse(sigmaStr);
-    vt = JSON.parse(vtStr);
+    }
+    // const content = JSON.parse(fs.readFileSync(__dirname + '/../../data.txt').toString());
+
+    console.log('end');
+    // predictions = JSON.parse(predStr);
+    const end = Date.now();
+    console.log('obj is', final)
+    // console.log('test retrieval', final[Math.floor(Math.random() * 10000)][Math.floor(Math.random() * 1000)])
+    console.log('DONE in ms:', end - start);
   });
-  // const options = {
-  //   mode: 'text',
-  //   pythonPath: '/usr/bin/python',
-  //   pythonOptions: ['-u'],
-  //   scriptPath: __dirname,
-  //   args: ['value1', 'value2', 'value3'],
-  // };
-  //
-  // PythonShell.run('svd.py', options, (err, results) => {
-  //   if (err) throw err;
-  //   // results is an array consisting of messages collected during execution
-  //   console.log('results: %j', results);
-  // });
-
-
 
 
   // let start = Date.now();

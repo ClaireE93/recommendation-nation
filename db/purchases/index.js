@@ -5,7 +5,7 @@ const QueryStream = require('pg-query-stream');
 const JSONStream = require('JSONStream');
 
 // See https://github.com/brianc/node-pg-pool for possible url parsing issues
-// NOTE: Fix this for deployment
+// NOTE: Fix this for deployment, REMOVE deployment data from file
 const cn = {
   database: 'purchases',
   user: 'mtakano',
