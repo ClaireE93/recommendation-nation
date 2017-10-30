@@ -1,10 +1,8 @@
-const Recommender = require('likely');
 const pg = require('pg');
 const QueryStream = require('pg-query-stream');
 const JSONStream = require('JSONStream');
 const { Writable } = require('stream');
 const PythonShell = require('python-shell');
-const fs = require("fs");
 const db = require('../../db/purchases/index.js');
 const mongo = require('../../db/recommendations/index.js');
 const elastic = require('../elasticsearch/index.js');
@@ -13,7 +11,9 @@ const connectionString = process.env.DATABASE_URL || 'postgres://localhost:5432/
 const client = new pg.Client(connectionString);
 
 const userObj = {}; // Mapping user id to matrix index
+const userArr = []; // Mapping matrix index to user id
 const productObj = {}; // Mapping product id to matrix index
+const productArr = []; // Mapping matrix index to product id
 const matrix = [];
 
 class MatrixWriteable extends Writable {
@@ -63,10 +63,12 @@ const generateMatrix = () => {
     const m = products.length;
     for (let i = 0; i < users.length; i += 1) {
       userObj[users[i].user_id] = i;
+      userArr.push(users[i].user_id);
       matrix[i] = Array(m).fill(0);
     }
     for (let i = 0; i < products.length; i += 1) {
       productObj[products[i].product_id] = i;
+      productArr.push(products[i].product_id);
     }
     // Clear for garbage collection
     users = [];
@@ -127,15 +129,20 @@ const populateRecommendations = () => {
   const path = 'svd.py';
   const pyshell = new PythonShell(path);
   const arr = [];
-  const users = {};
-  const products = {};
   const final = [];
-  const totUsers = 10;
-  const totProd = 10;
+  const totUsers = 10; // This can be found by calling userObj keys.length
+  const totProd = 5; // This can be found by calling productObj keys.length
+  const chunking = 5000;
+
+  // NOTE remove this when integrating with rest of file and real mxn matrix
+  // NOTE: productArr and userArr will be an int representing user id or product id
+  // This maps id to index since arr[index] = id. This is needed for python dataframe
+  for (let i = 0; i < totProd; i += 1) {
+    productArr.push('prod' + (i + 1));
+  }
   for (let i = 0; i < totUsers; i += 1) {
     const cur = [];
-    users[i + 1] = i; // Map user IDs and products IDs to indeces (done in BuildMatriix)
-    products[i + 1] = i;
+    userArr.push(i + 1);
     for (let j = 0; j < totProd; j += 1) {
       if (Math.random() > 0.5) {
         cur.push((Math.random() * 6).toFixed(5));
@@ -147,20 +154,23 @@ const populateRecommendations = () => {
   }
   // FIXME: This should be between 20 and 100. This number should increase
   // Using MAE feedback
-  const numCategories = 20;
-  let predStr = '';
+  const numCategories = 3;
   let isPred = false;
-  let predictions;
   const start = Date.now();
   // Slice array down and send
-  const cuts = Math.floor(arr.length / 10000)
-  const half = arr.slice(0, Math.floor(totUsers / 2));
-  const half2 = arr.slice(Math.floor(totUsers / 2));
-
+  const cuts = Math.ceil(arr.length / chunking);
+  const toSend = [];
+  for (let i = 0; i < cuts; i += 1) {
+    const startInd = Math.floor((totUsers / cuts) * i);
+    const endInd = Math.floor((totUsers / cuts) * (i + 1));
+    toSend.push(arr.slice(startInd, endInd));
+  }
   pyshell.send(JSON.stringify(numCategories));
-  pyshell.send(JSON.stringify(half));
-  pyshell.send(JSON.stringify(half2));
-
+  pyshell.send(JSON.stringify(userArr));
+  pyshell.send(JSON.stringify(productArr));
+  toSend.forEach((chunk) => {
+    pyshell.send(JSON.stringify(chunk));
+  });
   pyshell.on('message', (message) => {
     // received a message sent from the Python script (a simple "print" statement)
     console.log('MESSAGE IS', message);
@@ -185,8 +195,12 @@ const populateRecommendations = () => {
     console.log('end');
     // predictions = JSON.parse(predStr);
     const end = Date.now();
-    console.log('obj is', final)
-    // console.log('test retrieval', final[Math.floor(Math.random() * 10000)][Math.floor(Math.random() * 1000)])
+    console.log('obj length is', final.length)
+    console.log('obj inner length is', final[0].length)
+    const row = Math.floor(Math.random() * totUsers);
+    const col = Math.floor(Math.random() * totProd);
+    console.log('row col are', row, col);
+    console.log('test retrieval', final[row][col])
     console.log('DONE in ms:', end - start);
   });
 
