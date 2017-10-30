@@ -4,8 +4,8 @@ const JSONStream = require('JSONStream');
 const { Writable } = require('stream');
 const PythonShell = require('python-shell');
 const db = require('../../db/purchases/index.js');
-const mongo = require('../../db/recommendations/index.js');
-const elastic = require('../elasticsearch/index.js');
+// const mongo = require('../../db/recommendations/index.js');
+// const elastic = require('../elasticsearch/index.js');
 
 const connectionString = process.env.DATABASE_URL || 'postgres://localhost:5432/purchases';
 const client = new pg.Client(connectionString);
@@ -138,11 +138,13 @@ const populateRecommendations = () => {
   // NOTE: productArr and userArr will be an int representing user id or product id
   // This maps id to index since arr[index] = id. This is needed for python dataframe
   for (let i = 0; i < totProd; i += 1) {
-    productArr.push('prod' + (i + 1));
+    // productArr.push('prod' + (i + 1));
+    productArr.push(i + 2);
   }
   for (let i = 0; i < totUsers; i += 1) {
     const cur = [];
-    userArr.push(i + 1);
+    // userArr.push('user' + (i + 1));
+    userArr.push(i + 2);
     for (let j = 0; j < totProd; j += 1) {
       if (Math.random() > 0.5) {
         cur.push((Math.random() * 6).toFixed(5));
@@ -174,14 +176,14 @@ const populateRecommendations = () => {
   pyshell.on('message', (message) => {
     // received a message sent from the Python script (a simple "print" statement)
     console.log('MESSAGE IS', message);
-    if (message === 'PREDICTIONS') {
-      isPred = true;
-    } else if (message === 'DONE') {
-      isPred = false;
-    } else if (isPred) {
-      final.push(JSON.parse(message));
-      // predStr += message;
-    }
+    // if (message === 'PREDICTIONS') {
+    //   isPred = true;
+    // } else if (message === 'DONE') {
+    //   isPred = false;
+    // } else if (isPred) {
+    //   final.push(JSON.parse(message));
+    //   // predStr += message;
+    // }
   });
 
 
@@ -195,12 +197,12 @@ const populateRecommendations = () => {
     console.log('end');
     // predictions = JSON.parse(predStr);
     const end = Date.now();
-    console.log('obj length is', final.length)
-    console.log('obj inner length is', final[0].length)
-    const row = Math.floor(Math.random() * totUsers);
-    const col = Math.floor(Math.random() * totProd);
-    console.log('row col are', row, col);
-    console.log('test retrieval', final[row][col])
+    // console.log('obj length is', final.length)
+    // console.log('obj inner length is', final[0].length)
+    // const row = Math.floor(Math.random() * totUsers);
+    // const col = Math.floor(Math.random() * totProd);
+    // console.log('row col are', row, col);
+    // console.log('test retrieval', final[row][col])
     console.log('DONE in ms:', end - start);
   });
 
