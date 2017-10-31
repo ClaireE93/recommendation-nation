@@ -164,7 +164,7 @@ const receiveRequests = () => {
       throw err;
     } else {
       const user = JSON.parse(data.Messages[0].Body).user_id;
-      mongo.fetch(user)
+      return mongo.fetch(user)
         .then((recData) => {
           if (recData) {
             return sendRecs(recData);
@@ -224,9 +224,12 @@ const purgeQueue = (url) => {
   });
 };
 
+// Export functions for unit testing
 module.exports = {
+  processAllMessages,
   receiveRequests,
   receivePurchases,
-  processAllMessages,
   purgeQueue,
+  calcMAE,
+  checkPurchase,
 };
