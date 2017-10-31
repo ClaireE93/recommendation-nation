@@ -4,18 +4,18 @@ const JSONStream = require('JSONStream');
 const { Writable } = require('stream');
 const PythonShell = require('python-shell');
 const db = require('../../db/purchases/index.js');
-const log = require('single-line-log').stdout;
+const { setupParams } = require('../../generators/config.js');
 // const mongo = require('../../db/recommendations/index.js');
 // const elastic = require('../elasticsearch/index.js');
 
 const connectionString = process.env.DATABASE_URL || 'postgres://localhost:5432/purchases';
 const client = new pg.Client(connectionString);
 
-const userObj = {}; // Mapping user id to matrix index
+let userObj = {}; // Mapping user id to matrix index
 let userArr = []; // Mapping matrix index to user id
-const productObj = {}; // Mapping product id to matrix index
+let productObj = {}; // Mapping product id to matrix index
 let productArr = []; // Mapping matrix index to product id
-const matrix = [];
+let matrix = [];
 
 class MatrixWriteable extends Writable {
   constructor(inputMatrix) {
@@ -72,8 +72,8 @@ const generateMatrix = () => {
       productArr.push(products[i].product_id);
     }
     // Clear for garbage collection
-    users = [];
-    products = [];
+    users = null;
+    products = null;
     return matrix;
   };
 
@@ -87,117 +87,49 @@ const generateMatrix = () => {
       buildMatrix();
       return getPurchases();
     })
+    .then(() => {
+      userObj = null;
+      productObj = null;
+    })
     .catch((err) => {
       throw err;
     });
 };
 
-// NOTE: This function could also parse out any recs below a certain rating
-const parseRecs = (recs) => {
-  const result = {};
-  recs.forEach((rec) => {
-    const [product, rating] = rec;
-    result[product] = rating;
-  });
-
-  return result;
-};
-
-// FIXME: This needs to be in Python using Scikit
 const generateRecs = () => {
-  // const rowLabels = [];
-  // const colLabels = [];
-  const promiseArr = [];
-  // const Model = Recommender.buildModel(matrix);
-  // Object.keys(userObj).forEach((user) => {
-  //   const recs = Model.recommendations(userObj[user]);
-  //   const obj = parseRecs(recs);
-  //   const promiseMongo = mongo.add(obj, user, recs.length);
-  //   const promiseElastic = elastic.addRec({ user_id: user, number: recs.length, mae: 0 });
-  //   promiseArr.push(promiseMongo);
-  //   promiseArr.push(promiseElastic);
-  // });
-
-
-  // TODO: Get recs for every user and store to mongo
-  // const recommendations = Model.recommendations(0);
-  console.log('done making promises!');
-  return Promise.all(promiseArr);
-};
-
-const populateRecommendations = () => {
   PythonShell.defaultOptions = { scriptPath: __dirname };
   const path = 'svd.py';
   const pyshell = new PythonShell(path);
-  let arr = [];
-  const totUsers = 50000; // This can be found by calling userObj keys.length
-  const totProd = 1000; // This can be found by calling productObj keys.length
   const chunking = 5000;
-  const numCategories = 50;
 
-  // NOTE remove this when integrating with rest of file and real mxn matrix
-  // NOTE: productArr and userArr will be an int representing user id or product id
-  // This maps id to index since arr[index] = id. This is needed for python dataframe
-  for (let i = 0; i < totProd; i += 1) {
-    // productArr.push('prod' + (i + 1));
-    // productArr.push('' + (i + 2));
-    productArr.push((i + 2));
-  }
-  for (let i = 0; i < totUsers; i += 1) {
-    const cur = [];
-    // userArr.push('user' + (i + 1));
-    userArr.push(i + 2);
-    for (let j = 0; j < totProd; j += 1) {
-      if (Math.random() > 0.5) {
-        cur.push((Math.random() * 6).toFixed(5));
-      } else {
-        cur.push(0);
-      }
-    }
-    arr.push(cur);
-  }
-  // FIXME: This should be between 20 and 100. This number should increase
-  // Using MAE feedback
+  // const start = Date.now();
 
-  const start = Date.now();
   // Slice array down and send
-  const cuts = Math.ceil(arr.length / chunking);
+  const cuts = Math.ceil(matrix.length / chunking);
   const toSend = [];
   for (let i = 0; i < cuts; i += 1) {
-    const startInd = Math.floor((totUsers / cuts) * i);
-    const endInd = Math.floor((totUsers / cuts) * (i + 1));
-    toSend.push(arr.slice(startInd, endInd));
+    const multiplier = setupParams.users / cuts;
+    const startInd = Math.floor(multiplier * i);
+    const endInd = Math.floor(multiplier * (i + 1));
+    toSend.push(matrix.slice(startInd, endInd));
   }
 
-  arr = null; // FIXME: This should be matrix = null
-  pyshell.send(JSON.stringify(numCategories));
+  matrix = null;
+  pyshell.send(JSON.stringify(setupParams.categories));
   pyshell.send(JSON.stringify(userArr));
   userArr = null;
   pyshell.send(JSON.stringify(productArr));
   productArr = null;
-  for (let i = 0; i < toSend.length; i++) {
+  for (let i = 0; i < toSend.length; i += 1) {
     let obj = JSON.stringify(toSend[i]);
     pyshell.send(obj);
     obj = null;
     toSend[i] = null;
   }
-  pyshell.on('message', (message) => {
-    // received a message sent from the Python script (a simple "print" statement)
-    console.log('message: ', message);
-    // if (message.startsWith('REC')) {
-    //   log(message);
-    // } else {
-    //   console.log('message: ', message);
-    // }
-    // if (message === 'PREDICTIONS') {
-    //   isPred = true;
-    // } else if (message === 'DONE') {
-    //   isPred = false;
-    // } else if (isPred) {
-    //   final.push(JSON.parse(message));
-    //   // predStr += message;
-    // }
-  });
+  // pyshell.on('message', (message) => {
+  //   // received a message sent from the Python script (a simple "print" statement)
+  //   console.log('message: ', message);
+  // });
 
 
   // end the input stream and allow the process to exit
@@ -205,37 +137,29 @@ const populateRecommendations = () => {
     if (err) {
       throw err;
     }
-    // const content = JSON.parse(fs.readFileSync(__dirname + '/../../data.txt').toString());
-
-    console.log('end');
-    // predictions = JSON.parse(predStr);
-    const end = Date.now();
-    // console.log('obj length is', final.length)
-    // console.log('obj inner length is', final[0].length)
-    // const row = Math.floor(Math.random() * totUsers);
-    // const col = Math.floor(Math.random() * totProd);
-    // console.log('row col are', row, col);
-    // console.log('test retrieval', final[row][col])
-    console.log('DONE in ms:', end - start);
+    // console.log('end');
+    // const end = Date.now();
+    // console.log('DONE in ms:', end - start);
   });
+};
 
-
-  // let start = Date.now();
-  // let end;
+const populateRecommendations = () => {
+  let start = Date.now();
+  let end;
   // console.log('started at', new Date(start).toString());
-  // generateMatrix()
-  //   .then(() => {
-  //     end = Date.now();
-  //     console.log('finished making base matrix', new Date(end).toString());
-  //     console.log('finished in ms', end - start);
-  //     start = Date.now();
-  //     return generateRecs();
-  //   })
-  //   .then(() => {
-  //     end = Date.now();
-  //     console.log('finished at', new Date(end).toString());
-  //     console.log('finished in ms', end - start)
-  //   })
+  generateMatrix()
+    .then(() => {
+      end = Date.now();
+      // console.log('finished making base matrix', new Date(end).toString());
+      // console.log('finished in ms', end - start);
+      start = Date.now();
+      return generateRecs();
+    })
+    // .then(() => {
+    //   end = Date.now();
+    //   console.log('finished at', new Date(end).toString());
+    //   console.log('finished in ms', end - start)
+    // })
 };
 
 populateRecommendations();

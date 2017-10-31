@@ -24,7 +24,7 @@ def getUserRecs(user_ID, original, preds_df):
     sorted_user_predictions = preds_df.loc[user_ID].sort_values(ascending=False)
 
     # Remove items user has not rated
-    user_data_clean = user_data[user_data != '0']
+    user_data_clean = user_data[user_data != 0]
 
     # Remove any negative recommendations
     sorted_user_predictions = sorted_user_predictions[sorted_user_predictions > 0]
