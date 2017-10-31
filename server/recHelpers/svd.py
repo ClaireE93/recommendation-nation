@@ -30,7 +30,6 @@ def getUserRecs(user_ID, original, preds_df):
     sorted_user_predictions = sorted_user_predictions[sorted_user_predictions > 0]
     recommendations = {}
     count = 0
-    tot = 0;
 
     # Get top 15 recommendations that user has not already purchased
     for index, row in sorted_user_predictions.iteritems():
@@ -39,8 +38,7 @@ def getUserRecs(user_ID, original, preds_df):
         if index not in user_data_clean.index:
             recommendations[str(index)] = row
             count += 1
-            tot += 1
-            if (tot == 15):
+            if (count == 15):
                 break
 
     db_object = {
