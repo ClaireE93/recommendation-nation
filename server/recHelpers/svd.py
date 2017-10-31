@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from pymongo import MongoClient
 from elasticsearch import Elasticsearch
+from scipy.sparse.linalg import svds
 
 client = MongoClient()
 db = client.recs
@@ -18,28 +19,42 @@ def read_in():
     return result
 
 def getUserRecs(user_ID, original, preds_df):
+    # print "REC in get user rec for", user_ID
     # Original user rating input data
     user_data = original.loc[user_ID]
     sorted_user_predictions = preds_df.loc[user_ID].sort_values(ascending=False)
+    print "sorted predictions"
+    print sorted_user_predictions[:10]
 
     # Remove items user has not rated
-    user_data_clean = user_data[user_data != 0]
+    user_data = user_data[user_data > 0]
+    user_data_clean = user_data[user_data != '0']
 
     # Remove any negative recommendations
     sorted_user_predictions = sorted_user_predictions[sorted_user_predictions > 0]
     recommendations = {}
     count = 0
+    tot = 0;
     for index, row in sorted_user_predictions.iteritems():
         db_object = {}
-        if index not in user_data_clean.index and row > 0:
+
+        # TODO: Change row > 0 to more stringent requirement? row > 2.5?
+        if index not in user_data_clean.index:
             recommendations[index] = row
             count += 1
+            tot += 1
+            # print "REC FOUND! product is", index
+            if (tot == 10):
+                break
 
     db_object = {
         'recommendations': recommendations,
         'count': count,
         'user': user_ID
     }
+
+    print "object to add"
+    print db_object
 
     # Update Mongo (recommendations) and elasticsearch (count) databases
     db.recs.update({'user': user_ID}, {'$set': db_object}, upsert=True)
@@ -48,10 +63,22 @@ def getUserRecs(user_ID, original, preds_df):
 def main():
     lines = read_in()
 
+
+    # test = [[1, 0, 3, 0, 6, 0], [1, 2, 3, 0, 6, 0], [1, 2, 3, 0, 6, 0], [1, 2, 3, 0, 6, 0]]
+    # df = pd.DataFrame(test)
+    # selection = df.iloc[0]
+    # selection = selection[selection != 0]
+    # print "test df is"
+    # print selection
+    #
+    #
+    # return
+
     # Construct arguments from stdin
     components = lines[0]
     users = lines[1]
     products = lines[2]
+    products = [str(i) for i in products]
     matrix = lines[3]
     for line in lines[4:]:
         matrix = np.concatenate((matrix, line))
@@ -62,7 +89,8 @@ def main():
     # Handle user rating bias
     user_ratings_mean = np.mean(R, axis = 1)
     R_demeaned = R - user_ratings_mean.reshape(-1, 1)
-    U, Sigma, VT = randomized_svd(R_demeaned, n_components=components, n_iter=5, random_state=None)
+    # U, Sigma, VT = randomized_svd(R_demeaned, n_components=components, n_iter=5, random_state=None)
+    U, Sigma, VT = svds(R_demeaned, k=components)
 
     # Convert sigma from flat array to dimensional array with diagonals filled in
     Sigma = np.diag(Sigma)
@@ -76,15 +104,10 @@ def main():
     original = pd.DataFrame(matrix, index=users, columns=products)
 
     # Iterate over all users and construct recommendations
-    print "PREDS"
-    print preds_df
-    print "OG"
-    print original
-    for row in preds_df.itertuples():
-        strTest = str(row.Index)
-        # print "row type is", type(strTest)
-        # print "row is", strTest
-        getUserRecs(strTest, original, preds_df)
+    print "STARTING LOOP"
+    # for row in preds_df.itertuples():
+    #     getUserRecs(row[0], original, preds_df)
+    getUserRecs(2, original, preds_df)
 
 # Start process
 if __name__ == '__main__':

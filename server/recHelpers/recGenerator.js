@@ -4,6 +4,7 @@ const JSONStream = require('JSONStream');
 const { Writable } = require('stream');
 const PythonShell = require('python-shell');
 const db = require('../../db/purchases/index.js');
+const log = require('single-line-log').stdout;
 // const mongo = require('../../db/recommendations/index.js');
 // const elastic = require('../elasticsearch/index.js');
 
@@ -130,16 +131,17 @@ const populateRecommendations = () => {
   const pyshell = new PythonShell(path);
   const arr = [];
   const final = [];
-  const totUsers = 10; // This can be found by calling userObj keys.length
-  const totProd = 5; // This can be found by calling productObj keys.length
+  const totUsers = 10000; // This can be found by calling userObj keys.length
+  const totProd = 1000; // This can be found by calling productObj keys.length
   const chunking = 5000;
+  const numCategories = 50;
 
   // NOTE remove this when integrating with rest of file and real mxn matrix
   // NOTE: productArr and userArr will be an int representing user id or product id
   // This maps id to index since arr[index] = id. This is needed for python dataframe
   for (let i = 0; i < totProd; i += 1) {
     // productArr.push('prod' + (i + 1));
-    productArr.push(i + 2);
+    productArr.push('' + (i + 2));
   }
   for (let i = 0; i < totUsers; i += 1) {
     const cur = [];
@@ -156,7 +158,7 @@ const populateRecommendations = () => {
   }
   // FIXME: This should be between 20 and 100. This number should increase
   // Using MAE feedback
-  const numCategories = 3;
+
   let isPred = false;
   const start = Date.now();
   // Slice array down and send
@@ -175,7 +177,12 @@ const populateRecommendations = () => {
   });
   pyshell.on('message', (message) => {
     // received a message sent from the Python script (a simple "print" statement)
-    console.log('MESSAGE IS', message);
+    console.log('message: ', message);
+    // if (message.startsWith('REC')) {
+    //   log(message);
+    // } else {
+    //   console.log('message: ', message);
+    // }
     // if (message === 'PREDICTIONS') {
     //   isPred = true;
     // } else if (message === 'DONE') {
