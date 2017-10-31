@@ -19,15 +19,11 @@ def read_in():
     return result
 
 def getUserRecs(user_ID, original, preds_df):
-    # print "REC in get user rec for", user_ID
     # Original user rating input data
     user_data = original.loc[user_ID]
     sorted_user_predictions = preds_df.loc[user_ID].sort_values(ascending=False)
-    print "sorted predictions"
-    print sorted_user_predictions[:10]
 
     # Remove items user has not rated
-    user_data = user_data[user_data > 0]
     user_data_clean = user_data[user_data != '0']
 
     # Remove any negative recommendations
@@ -35,16 +31,16 @@ def getUserRecs(user_ID, original, preds_df):
     recommendations = {}
     count = 0
     tot = 0;
+
+    # Get top 15 recommendations that user has not already purchased
     for index, row in sorted_user_predictions.iteritems():
         db_object = {}
 
-        # TODO: Change row > 0 to more stringent requirement? row > 2.5?
         if index not in user_data_clean.index:
-            recommendations[index] = row
+            recommendations[str(index)] = row
             count += 1
             tot += 1
-            # print "REC FOUND! product is", index
-            if (tot == 10):
+            if (tot == 15):
                 break
 
     db_object = {
@@ -53,26 +49,13 @@ def getUserRecs(user_ID, original, preds_df):
         'user': user_ID
     }
 
-    print "object to add"
-    print db_object
-
     # Update Mongo (recommendations) and elasticsearch (count) databases
     db.recs.update({'user': user_ID}, {'$set': db_object}, upsert=True)
-    es.update(index='recs', doc_type='recommendation', id=user_ID, body={'doc':{'number': count}, 'doc_as_upsert':True})
+    es.update(index='recs', doc_type='recommendation', id=user_ID, body={'doc':{'number': count, 'user': user_ID}, 'doc_as_upsert':True})
 
 def main():
     lines = read_in()
-
-
-    # test = [[1, 0, 3, 0, 6, 0], [1, 2, 3, 0, 6, 0], [1, 2, 3, 0, 6, 0], [1, 2, 3, 0, 6, 0]]
-    # df = pd.DataFrame(test)
-    # selection = df.iloc[0]
-    # selection = selection[selection != 0]
-    # print "test df is"
-    # print selection
-    #
-    #
-    # return
+    print "IN MAIN"
 
     # Construct arguments from stdin
     components = lines[0]
@@ -91,6 +74,7 @@ def main():
     R_demeaned = R - user_ratings_mean.reshape(-1, 1)
     # U, Sigma, VT = randomized_svd(R_demeaned, n_components=components, n_iter=5, random_state=None)
     U, Sigma, VT = svds(R_demeaned, k=components)
+    print "U SIGMA VT CREATED"
 
     # Convert sigma from flat array to dimensional array with diagonals filled in
     Sigma = np.diag(Sigma)
@@ -104,10 +88,9 @@ def main():
     original = pd.DataFrame(matrix, index=users, columns=products)
 
     # Iterate over all users and construct recommendations
-    print "STARTING LOOP"
-    # for row in preds_df.itertuples():
-    #     getUserRecs(row[0], original, preds_df)
-    getUserRecs(2, original, preds_df)
+    print "ENTERING LOOP"
+    for row in preds_df.itertuples():
+        getUserRecs(row[0], original, preds_df)
 
 # Start process
 if __name__ == '__main__':

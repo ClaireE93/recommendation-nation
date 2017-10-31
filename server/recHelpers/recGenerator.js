@@ -12,9 +12,9 @@ const connectionString = process.env.DATABASE_URL || 'postgres://localhost:5432/
 const client = new pg.Client(connectionString);
 
 const userObj = {}; // Mapping user id to matrix index
-const userArr = []; // Mapping matrix index to user id
+let userArr = []; // Mapping matrix index to user id
 const productObj = {}; // Mapping product id to matrix index
-const productArr = []; // Mapping matrix index to product id
+let productArr = []; // Mapping matrix index to product id
 const matrix = [];
 
 class MatrixWriteable extends Writable {
@@ -129,9 +129,8 @@ const populateRecommendations = () => {
   PythonShell.defaultOptions = { scriptPath: __dirname };
   const path = 'svd.py';
   const pyshell = new PythonShell(path);
-  const arr = [];
-  const final = [];
-  const totUsers = 10000; // This can be found by calling userObj keys.length
+  let arr = [];
+  const totUsers = 50000; // This can be found by calling userObj keys.length
   const totProd = 1000; // This can be found by calling productObj keys.length
   const chunking = 5000;
   const numCategories = 50;
@@ -141,7 +140,8 @@ const populateRecommendations = () => {
   // This maps id to index since arr[index] = id. This is needed for python dataframe
   for (let i = 0; i < totProd; i += 1) {
     // productArr.push('prod' + (i + 1));
-    productArr.push('' + (i + 2));
+    // productArr.push('' + (i + 2));
+    productArr.push((i + 2));
   }
   for (let i = 0; i < totUsers; i += 1) {
     const cur = [];
@@ -159,7 +159,6 @@ const populateRecommendations = () => {
   // FIXME: This should be between 20 and 100. This number should increase
   // Using MAE feedback
 
-  let isPred = false;
   const start = Date.now();
   // Slice array down and send
   const cuts = Math.ceil(arr.length / chunking);
@@ -169,12 +168,19 @@ const populateRecommendations = () => {
     const endInd = Math.floor((totUsers / cuts) * (i + 1));
     toSend.push(arr.slice(startInd, endInd));
   }
+
+  arr = null; // FIXME: This should be matrix = null
   pyshell.send(JSON.stringify(numCategories));
   pyshell.send(JSON.stringify(userArr));
+  userArr = null;
   pyshell.send(JSON.stringify(productArr));
-  toSend.forEach((chunk) => {
-    pyshell.send(JSON.stringify(chunk));
-  });
+  productArr = null;
+  for (let i = 0; i < toSend.length; i++) {
+    let obj = JSON.stringify(toSend[i]);
+    pyshell.send(obj);
+    obj = null;
+    toSend[i] = null;
+  }
   pyshell.on('message', (message) => {
     // received a message sent from the Python script (a simple "print" statement)
     console.log('message: ', message);
