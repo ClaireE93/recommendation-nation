@@ -38,19 +38,19 @@ const updateMAE = (purchases) => {
   const dummyCount = 2;
   const dummyCart = [{ productId: 5, rating: 3 }, { productId: 3, rating: 5 }];
 
-  // mongo.fetch(purchases.user_id)
-  return mongo.add({ 5: 1.5, 3: 4.3 }, 3, 2) // FIXME: Remove with real data
-    .then(() => (
-      mongo.fetch(dummyUser)
-    ))
+  return mongo.fetch(purchases.user_id)
+  // return mongo.add({ 5: 1.5, 3: 4.3 }, 3, 2) // FIXME: Remove with real data
+    // .then(() => (
+    //   mongo.fetch(dummyUser)
+    // ))
     .then((data) => {
       if (!data) { return null; }
-      // const mae = calcMAE(data.recommendations, purchases.shopping_cart);
-      const mae = calcMAE(dummyRec, dummyCart);
-      // const arr = mongo.add(null, data.user_id, null, mae);
-      const arr = [mongo.add(null, dummyUser, null, mae)];
-      // arr.push(elastic.add({ user_id: data.user_id, number: data.count, mae }));
-      arr.push(elastic.addRec({ user_id: dummyUser, number: dummyCount, mae }));
+      const mae = calcMAE(data.recommendations, purchases.shopping_cart);
+      // const mae = calcMAE(dummyRec, dummyCart);
+      const arr = mongo.add(null, data.user_id, null, mae);
+      // const arr = [mongo.add(null, dummyUser, null, mae)];
+      arr.push(elastic.add({ user_id: data.user_id, number: data.count, mae }));
+      // arr.push(elastic.addRec({ user_id: dummyUser, number: dummyCount, mae }));
       return Promise.all(arr);
     });
 };
@@ -170,7 +170,7 @@ const sendRecs = (object) => {
 
 // TODO: This function should fetch recommendations by user id from mongo
 // And publish user and recs to the recResponse message bus
-// For now, hard code the user so it pulls the one user that's in the mogno DB
+// For now, hard code the user so it pulls the one user that's in the mongo DB
 // Replace with actual user once recommendation service works!
 // Receive requests for user recommendations
 const receiveRequests = () => {
@@ -181,8 +181,8 @@ const receiveRequests = () => {
       throw err;
     } else {
       const user = JSON.parse(data.Messages[0].Body).user_id;
-      // mongo.fetch(user)
-      mongo.fetch(3) // FIXME: Remove for live data
+      mongo.fetch(user)
+      // mongo.fetch(3) // FIXME: Remove for live data
         .then((recData) => {
           if (recData) {
             return sendRecs(recData);
@@ -190,7 +190,6 @@ const receiveRequests = () => {
           const emptyResp = {
             user_id: user,
             recommendations: {},
-            mae: 0,
             count: 0,
           };
           return sendRecs(emptyResp);

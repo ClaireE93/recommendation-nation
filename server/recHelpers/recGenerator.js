@@ -5,8 +5,6 @@ const { Writable } = require('stream');
 const PythonShell = require('python-shell');
 const db = require('../../db/purchases/index.js');
 const { setupParams } = require('../../generators/config.js');
-// const mongo = require('../../db/recommendations/index.js');
-// const elastic = require('../elasticsearch/index.js');
 
 const connectionString = process.env.DATABASE_URL || 'postgres://localhost:5432/purchases';
 const client = new pg.Client(connectionString);
@@ -102,13 +100,11 @@ const generateRecs = () => {
   const pyshell = new PythonShell(path);
   const chunking = 5000;
 
-  // const start = Date.now();
-
   // Slice array down and send
   const cuts = Math.ceil(matrix.length / chunking);
   const toSend = [];
+  const multiplier = setupParams.users / cuts;
   for (let i = 0; i < cuts; i += 1) {
-    const multiplier = setupParams.users / cuts;
     const startInd = Math.floor(multiplier * i);
     const endInd = Math.floor(multiplier * (i + 1));
     toSend.push(matrix.slice(startInd, endInd));
@@ -137,32 +133,17 @@ const generateRecs = () => {
     if (err) {
       throw err;
     }
-    // console.log('end');
-    // const end = Date.now();
-    // console.log('DONE in ms:', end - start);
   });
 };
 
 const populateRecommendations = () => {
-  let start = Date.now();
-  let end;
-  // console.log('started at', new Date(start).toString());
   generateMatrix()
-    .then(() => {
-      end = Date.now();
-      // console.log('finished making base matrix', new Date(end).toString());
-      // console.log('finished in ms', end - start);
-      start = Date.now();
-      return generateRecs();
-    })
-    // .then(() => {
-    //   end = Date.now();
-    //   console.log('finished at', new Date(end).toString());
-    //   console.log('finished in ms', end - start)
-    // })
+    .then(() => (
+      generateRecs()
+    ));
 };
 
-populateRecommendations();
+// populateRecommendations();
 
 module.exports = {
   populateRecommendations,

@@ -1,5 +1,4 @@
 import sys, json
-from sklearn.utils.extmath import randomized_svd
 import numpy as np
 import pandas as pd
 from pymongo import MongoClient
@@ -9,6 +8,10 @@ from scipy.sparse.linalg import svds
 client = MongoClient()
 db = client.recs
 es = Elasticsearch()
+
+# This function will convert an m x n (users by products, values are ratings) matrix
+# into an m x n recommendation matrix using Singular Value Decomposition (SVD). Then,
+# it will update all user recommendations in the Mongo and Elasticsearch databases
 
 def main():
     lines = read_in()
@@ -28,7 +31,6 @@ def main():
     # Handle user rating bias
     user_ratings_mean = np.mean(R, axis = 1)
     R_demeaned = R - user_ratings_mean.reshape(-1, 1)
-    # U, Sigma, VT = randomized_svd(R_demeaned, n_components=components, n_iter=5, random_state=None)
     U, Sigma, VT = svds(R_demeaned, k=components)
 
     # Convert sigma from flat array to dimensional array with diagonals filled in

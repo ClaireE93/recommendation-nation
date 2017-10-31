@@ -1,7 +1,6 @@
 const AWS = require('aws-sdk');
 const { PURCHASE_URL } = require('../config/messageUrls.js');
-
-// const REC_REQUEST_URL = 'https://sqs.us-east-2.amazonaws.com/402690953069/recRequests';
+const { setupParams } = require('./config.js');
 
 AWS.config.loadFromPath('./config/development.json');
 
@@ -9,14 +8,14 @@ const sqs = new AWS.SQS({ apiVersion: '2012-11-05' });
 
 const generateCart = () => {
   const result = {
-    user_id: Math.ceil(Math.random() * 50000),
+    user_id: Math.ceil(Math.random() * setupParams.users),
   };
   const cart = [];
-  const tot = Math.ceil(Math.random() * 10); // Pick a random number of items
+  const tot = Math.ceil(Math.random() * 10); // Pick a random number of items for cart
   for (let i = 0; i < tot; i += 1) {
     const obj = {
-      productId: Math.ceil(Math.random() * 10000),
-      category: Math.ceil(Math.random() * 1000),
+      productId: Math.ceil(Math.random() * setupParams.products),
+      category: Math.ceil(Math.random() * setupParams.categories),
       rating: Math.ceil(Math.random() * 5),
     };
     cart.push(obj);
@@ -42,24 +41,6 @@ const createPurchase = () => {
     });
   });
 };
-
-//
-//
-// // const historic = require('./historic.js');
-// const db = require('../db/purchases/index.js');
-//
-// // This is totally random
-// // TODO: Use category data to make not random
-// // TODO: This should send a message to the message bus for queueing, not add
-// // directly to DB
-//
-// const createPurchase = (users, products) => {
-//   const user = Math.ceil(Math.random() * users);
-//   const product = Math.ceil(Math.random() * products);
-//   const rating = Math.ceil(Math.random() * 5);
-//   return db.addPurchase(null, product, user, rating);
-// };
-
 
 module.exports = {
   createPurchase,
