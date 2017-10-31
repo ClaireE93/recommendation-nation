@@ -10,47 +10,6 @@ client = MongoClient()
 db = client.recs
 es = Elasticsearch()
 
-#Read data from stdin
-def read_in():
-    lines = sys.stdin.readlines()
-    result = []
-    for line in lines:
-        result.append(json.loads(line))
-    return result
-
-def getUserRecs(user_ID, original, preds_df):
-    # Original user rating input data
-    user_data = original.loc[user_ID]
-    sorted_user_predictions = preds_df.loc[user_ID].sort_values(ascending=False)
-
-    # Remove items user has not rated
-    user_data_clean = user_data[user_data != 0]
-
-    # Remove any negative recommendations
-    sorted_user_predictions = sorted_user_predictions[sorted_user_predictions > 0]
-    recommendations = {}
-    count = 0
-
-    # Get top 15 recommendations that user has not already purchased
-    for index, row in sorted_user_predictions.iteritems():
-        db_object = {}
-
-        if index not in user_data_clean.index:
-            recommendations[str(index)] = row
-            count += 1
-            if (count == 15):
-                break
-
-    db_object = {
-        'recommendations': recommendations,
-        'count': count,
-        'user': user_ID
-    }
-
-    # Update Mongo (recommendations) and elasticsearch (count) databases
-    db.recs.update({'user': user_ID}, {'$set': db_object}, upsert=True)
-    es.update(index='recs', doc_type='recommendation', id=user_ID, body={'doc':{'number': count, 'user': user_ID}, 'doc_as_upsert':True})
-
 def main():
     lines = read_in()
 
@@ -86,6 +45,55 @@ def main():
     # Iterate over all users and construct recommendations
     for row in preds_df.itertuples():
         getUserRecs(row[0], original, preds_df)
+
+
+#Read data from stdin
+def read_in():
+    lines = sys.stdin.readlines()
+    result = []
+    for line in lines:
+        result.append(json.loads(line))
+    return result
+
+# Get highest rated predictions that user has not already rated and add to DBs
+def getUserRecs(user_ID, original, preds_df):
+    # Original user rating input data
+    user_data = original.loc[user_ID]
+    sorted_user_predictions = preds_df.loc[user_ID].sort_values(ascending=False)
+
+    # Remove items user has not rated
+    user_data_clean = user_data[user_data != 0]
+
+    # Remove any negative recommendations
+    sorted_user_predictions = sorted_user_predictions[sorted_user_predictions > 0]
+    recommendations = {}
+    count = 0
+
+    # Get top 15 recommendations that user has not already purchased
+    for index, row in sorted_user_predictions.iteritems():
+        db_object = {}
+
+        if index not in user_data_clean.index:
+            recommendations[str(index)] = row
+            count += 1
+            if (count == 15):
+                break
+
+    db_object = {
+        'recommendations': recommendations,
+        'count': count,
+        'user': user_ID
+    }
+
+    # Update Mongo (recommendations) and elasticsearch (count) databases
+    db.recs.update({'user': user_ID}, {'$set': db_object}, upsert=True)
+    es.update(
+        index='recs',
+        doc_type='recommendation',
+        id=user_ID,
+        body={'doc':{'number': count, 'user': user_ID}, 'doc_as_upsert':True}
+    )
+
 
 # Start process
 if __name__ == '__main__':
