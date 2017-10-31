@@ -1,23 +1,6 @@
 const historic = require('./historic.js');
 const db = require('../db/purchases/index.js');
-//
-// const setupParams = {
-//   users: 50000,
-//   products: 10000,
-//   categories: 1000,
-//   purchases: 5000000,
-// };
-// 37 seconds for 1M
-// 87 seconds for 2M
-// 218 seconds for 5M
-
-const setupParams = {
-  users: 10,
-  products: 20,
-  categories: 5,
-  purchases: 50,
-};
-
+const { setupParams } = require('./config.js');
 
 let start;
 let end;

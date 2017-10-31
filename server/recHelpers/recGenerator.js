@@ -1,18 +1,21 @@
-const Recommender = require('likely');
 const pg = require('pg');
 const QueryStream = require('pg-query-stream');
 const JSONStream = require('JSONStream');
 const { Writable } = require('stream');
+const PythonShell = require('python-shell');
 const db = require('../../db/purchases/index.js');
-const mongo = require('../../db/recommendations/index.js');
-const elastic = require('../elasticsearch/index.js');
+const { setupParams } = require('../../generators/config.js');
+// const mongo = require('../../db/recommendations/index.js');
+// const elastic = require('../elasticsearch/index.js');
 
 const connectionString = process.env.DATABASE_URL || 'postgres://localhost:5432/purchases';
 const client = new pg.Client(connectionString);
 
-const userObj = {}; // Mapping user id to matrix index
-const productObj = {}; // Mapping product id to matrix index
-const matrix = [];
+let userObj = {}; // Mapping user id to matrix index
+let userArr = []; // Mapping matrix index to user id
+let productObj = {}; // Mapping product id to matrix index
+let productArr = []; // Mapping matrix index to product id
+let matrix = [];
 
 class MatrixWriteable extends Writable {
   constructor(inputMatrix) {
@@ -61,14 +64,16 @@ const generateMatrix = () => {
     const m = products.length;
     for (let i = 0; i < users.length; i += 1) {
       userObj[users[i].user_id] = i;
+      userArr.push(users[i].user_id);
       matrix[i] = Array(m).fill(0);
     }
     for (let i = 0; i < products.length; i += 1) {
       productObj[products[i].product_id] = i;
+      productArr.push(products[i].product_id);
     }
     // Clear for garbage collection
-    users = [];
-    products = [];
+    users = null;
+    products = null;
     return matrix;
   };
 
@@ -82,59 +87,79 @@ const generateMatrix = () => {
       buildMatrix();
       return getPurchases();
     })
+    .then(() => {
+      userObj = null;
+      productObj = null;
+    })
     .catch((err) => {
       throw err;
     });
 };
 
-// NOTE: This function could also parse out any recs below a certain rating
-const parseRecs = (recs) => {
-  const result = {};
-  recs.forEach((rec) => {
-    result[rec[0]] = rec[1];
-  });
-
-  return result;
-};
-
 const generateRecs = () => {
-  // const rowLabels = [];
-  // const colLabels = [];
-  const promiseArr = [];
-  const Model = Recommender.buildModel(matrix);
-  Object.keys(userObj).forEach((user) => {
-    const recs = Model.recommendations(userObj[user]);
-    const obj = parseRecs(recs);
-    const promiseMongo = mongo.add(obj, user, recs.length);
-    const promiseElastic = elastic.addRec({ user_id: user, number: recs.length, mae: 0 });
-    promiseArr.push(promiseMongo);
-    promiseArr.push(promiseElastic);
+  PythonShell.defaultOptions = { scriptPath: __dirname };
+  const path = 'svd.py';
+  const pyshell = new PythonShell(path);
+  const chunking = 5000;
+
+  // const start = Date.now();
+
+  // Slice array down and send
+  const cuts = Math.ceil(matrix.length / chunking);
+  const toSend = [];
+  for (let i = 0; i < cuts; i += 1) {
+    const multiplier = setupParams.users / cuts;
+    const startInd = Math.floor(multiplier * i);
+    const endInd = Math.floor(multiplier * (i + 1));
+    toSend.push(matrix.slice(startInd, endInd));
+  }
+
+  matrix = null;
+  pyshell.send(JSON.stringify(setupParams.categories));
+  pyshell.send(JSON.stringify(userArr));
+  userArr = null;
+  pyshell.send(JSON.stringify(productArr));
+  productArr = null;
+  for (let i = 0; i < toSend.length; i += 1) {
+    let obj = JSON.stringify(toSend[i]);
+    pyshell.send(obj);
+    obj = null;
+    toSend[i] = null;
+  }
+  // pyshell.on('message', (message) => {
+  //   // received a message sent from the Python script (a simple "print" statement)
+  //   console.log('message: ', message);
+  // });
+
+
+  // end the input stream and allow the process to exit
+  pyshell.end((err) => {
+    if (err) {
+      throw err;
+    }
+    // console.log('end');
+    // const end = Date.now();
+    // console.log('DONE in ms:', end - start);
   });
-
-
-  // TODO: Get recs for every user and store to mongo
-  // const recommendations = Model.recommendations(0);
-  console.log('done making promises!');
-  return Promise.all(promiseArr);
 };
 
 const populateRecommendations = () => {
   let start = Date.now();
   let end;
-  console.log('started at', new Date(start).toString());
+  // console.log('started at', new Date(start).toString());
   generateMatrix()
     .then(() => {
       end = Date.now();
-      console.log('finished making base matrix', new Date(end).toString());
-      console.log('finished in ms', end - start);
+      // console.log('finished making base matrix', new Date(end).toString());
+      // console.log('finished in ms', end - start);
       start = Date.now();
       return generateRecs();
     })
-    .then(() => {
-      end = Date.now();
-      console.log('finished at', new Date(end).toString());
-      console.log('finished in ms', end - start)
-    })
+    // .then(() => {
+    //   end = Date.now();
+    //   console.log('finished at', new Date(end).toString());
+    //   console.log('finished in ms', end - start)
+    // })
 };
 
 populateRecommendations();

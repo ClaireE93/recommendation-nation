@@ -20,6 +20,12 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
 
 ## Usage
 
+To install all project dependencies, run the following:
+```
+npm install
+pip install -r requirements.txt
+```
+
 To start the app, run the following:
 ```
 node db/purchases/setup.js
@@ -34,7 +40,7 @@ npm start
 ## Requirements
 
 - Node 6.9.x
-- Express 
+- Express
 - Postgresql 9.6.x
 - MongoDB
 - Mongoose
