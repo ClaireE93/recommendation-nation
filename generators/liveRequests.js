@@ -1,16 +1,16 @@
 const AWS = require('aws-sdk');
 const { REC_REQUEST_URL } = require('../config/messageUrls.js');
-
-// const REC_REQUEST_URL = 'https://sqs.us-east-2.amazonaws.com/402690953069/recRequests';
+const { setupParams } = require('./config.js');
 
 AWS.config.loadFromPath('./config/development.json');
 
 const sqs = new AWS.SQS({ apiVersion: '2012-11-05' });
 
+// Simulate live requests for user recommendations
 const createRequest = () => {
   const params = {
     DelaySeconds: 10,
-    MessageBody: JSON.stringify({ user_id: Math.ceil(Math.random() * 50000) }),
+    MessageBody: JSON.stringify({ user_id: Math.ceil(Math.random() * setupParams.users) }),
     QueueUrl: REC_REQUEST_URL,
   };
 

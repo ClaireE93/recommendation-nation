@@ -5,8 +5,6 @@ const { Writable } = require('stream');
 const PythonShell = require('python-shell');
 const db = require('../../db/purchases/index.js');
 const { setupParams } = require('../../generators/config.js');
-// const mongo = require('../../db/recommendations/index.js');
-// const elastic = require('../elasticsearch/index.js');
 
 const connectionString = process.env.DATABASE_URL || 'postgres://localhost:5432/purchases';
 const client = new pg.Client(connectionString);
@@ -17,6 +15,8 @@ let productObj = {}; // Mapping product id to matrix index
 let productArr = []; // Mapping matrix index to product id
 let matrix = [];
 
+// Create writeable node stream class for streaming out all purchase records into
+// user x product matrix
 class MatrixWriteable extends Writable {
   constructor(inputMatrix) {
     super(inputMatrix);
@@ -96,19 +96,19 @@ const generateMatrix = () => {
     });
 };
 
+// Spawn python child process that takes in matrix via stdin, generates recs,
+// and adds to mongo and elasticsearch DBs
 const generateRecs = () => {
   PythonShell.defaultOptions = { scriptPath: __dirname };
   const path = 'svd.py';
   const pyshell = new PythonShell(path);
   const chunking = 5000;
 
-  // const start = Date.now();
-
-  // Slice array down and send
+  // Slice array down and send for performance
   const cuts = Math.ceil(matrix.length / chunking);
   const toSend = [];
+  const multiplier = setupParams.users / cuts;
   for (let i = 0; i < cuts; i += 1) {
-    const multiplier = setupParams.users / cuts;
     const startInd = Math.floor(multiplier * i);
     const endInd = Math.floor(multiplier * (i + 1));
     toSend.push(matrix.slice(startInd, endInd));
@@ -126,43 +126,26 @@ const generateRecs = () => {
     obj = null;
     toSend[i] = null;
   }
+
+  // Received a message sent from the Python script (a simple "print" statement)
   // pyshell.on('message', (message) => {
-  //   // received a message sent from the Python script (a simple "print" statement)
   //   console.log('message: ', message);
   // });
-
 
   // end the input stream and allow the process to exit
   pyshell.end((err) => {
     if (err) {
       throw err;
     }
-    // console.log('end');
-    // const end = Date.now();
-    // console.log('DONE in ms:', end - start);
   });
 };
 
 const populateRecommendations = () => {
-  let start = Date.now();
-  let end;
-  // console.log('started at', new Date(start).toString());
   generateMatrix()
-    .then(() => {
-      end = Date.now();
-      // console.log('finished making base matrix', new Date(end).toString());
-      // console.log('finished in ms', end - start);
-      start = Date.now();
-      return generateRecs();
-    })
-    // .then(() => {
-    //   end = Date.now();
-    //   console.log('finished at', new Date(end).toString());
-    //   console.log('finished in ms', end - start)
-    // })
+    .then(() => (
+      generateRecs()
+    ));
 };
-
-populateRecommendations();
 
 module.exports = {
   populateRecommendations,

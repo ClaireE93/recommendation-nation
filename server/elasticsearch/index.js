@@ -2,33 +2,25 @@ const { elasticClient } = require('./setup.js');
 
 const indexName = 'recs';
 
-/**
-* Delete an existing index
-*/
 const deleteIndex = () => (
   elasticClient.indices.delete({
     index: indexName,
   })
 );
 
-/**
-* create the index
-*/
 const initIndex = () => (
   elasticClient.indices.create({
     index: indexName,
   })
 );
 
-/**
-* check if the index exists
-*/
 const indexExists = () => (
   elasticClient.indices.exists({
     index: indexName,
   })
 );
 
+// Initialize index mapping
 const initMapping = () => (
   elasticClient.indices.putMapping({
     index: indexName,
@@ -43,6 +35,7 @@ const initMapping = () => (
   })
 );
 
+// Add record to elasticsearch
 const addRec = rec => (
   elasticClient.index({
     index: indexName,

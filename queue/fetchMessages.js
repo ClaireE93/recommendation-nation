@@ -7,7 +7,6 @@ const elastic = require('../server/elasticsearch');
 AWS.config.loadFromPath('./config/development.json');
 const sqs = new AWS.SQS({ apiVersion: '2012-11-05' });
 
-// mongo.add({ 5: 1.5, 3: 4.3 }, 3, 2 });
 // MAE = sumAllPurchases(abs(actual - expected)) / total
 // Calculate MAE for user
 const calcMAE = (expected = {}, actual) => {
@@ -28,32 +27,17 @@ const calcMAE = (expected = {}, actual) => {
   return numerator / tot;
 };
 
-// FIXME: Uses hardcoded numbers for now
 // Update user's MAE based on actual purchases
-const updateMAE = (purchases) => {
-  let curRecs;
-  // FIXME: Remove me when it's not dummy data!
-  const dummyRec = { 5: 1.5, 3: 4.3 };
-  const dummyUser = 3;
-  const dummyCount = 2;
-  const dummyCart = [{ productId: 5, rating: 3 }, { productId: 3, rating: 5 }];
-
-  // mongo.fetch(purchases.user_id)
-  return mongo.add({ 5: 1.5, 3: 4.3 }, 3, 2) // FIXME: Remove with real data
-    .then(() => (
-      mongo.fetch(dummyUser)
-    ))
+const updateMAE = purchases => (
+  mongo.fetch(purchases.user_id)
     .then((data) => {
       if (!data) { return null; }
-      // const mae = calcMAE(data.recommendations, purchases.shopping_cart);
-      const mae = calcMAE(dummyRec, dummyCart);
-      // const arr = mongo.add(null, data.user_id, null, mae);
-      const arr = [mongo.add(null, dummyUser, null, mae)];
-      // arr.push(elastic.add({ user_id: data.user_id, number: data.count, mae }));
-      arr.push(elastic.addRec({ user_id: dummyUser, number: dummyCount, mae }));
+      const mae = calcMAE(data.recommendations, purchases.shopping_cart);
+      const arr = [mongo.add(null, data.user, null, mae)];
+      arr.push(elastic.addRec({ user_id: data.user, number: data.count, mae }));
       return Promise.all(arr);
-    });
-};
+    })
+);
 
 // See if all purchase elements exist (user, product, category).
 // If they don't exist, add them to DBs
@@ -98,6 +82,9 @@ const updateDB = (purchases) => {
         arr.push(promise);
       });
       return Promise.all(arr);
+    })
+    .catch((err) => {
+      throw err;
     });
 };
 
@@ -125,7 +112,7 @@ const params = {
   WaitTimeSeconds: 0,
 };
 
-// Check for new purchases
+// Check for purchase messages
 const receivePurchases = () => {
   params.QueueUrl = PURCHASE_URL;
 
@@ -168,10 +155,6 @@ const sendRecs = (object) => {
   });
 };
 
-// TODO: This function should fetch recommendations by user id from mongo
-// And publish user and recs to the recResponse message bus
-// For now, hard code the user so it pulls the one user that's in the mogno DB
-// Replace with actual user once recommendation service works!
 // Receive requests for user recommendations
 const receiveRequests = () => {
   params.QueueUrl = REC_REQUEST_URL;
@@ -181,8 +164,7 @@ const receiveRequests = () => {
       throw err;
     } else {
       const user = JSON.parse(data.Messages[0].Body).user_id;
-      // mongo.fetch(user)
-      mongo.fetch(3) // FIXME: Remove for live data
+      mongo.fetch(user)
         .then((recData) => {
           if (recData) {
             return sendRecs(recData);
@@ -190,7 +172,6 @@ const receiveRequests = () => {
           const emptyResp = {
             user_id: user,
             recommendations: {},
-            mae: 0,
             count: 0,
           };
           return sendRecs(emptyResp);

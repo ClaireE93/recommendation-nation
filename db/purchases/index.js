@@ -1,20 +1,7 @@
 const pgp = require('pg-promise')({
   capSQL: true, // generate capitalized SQL
 });
-const QueryStream = require('pg-query-stream');
-const JSONStream = require('JSONStream');
-
-// See https://github.com/brianc/node-pg-pool for possible url parsing issues
-// NOTE: Fix this for deployment, REMOVE deployment data from file
-const cn = {
-  database: 'purchases',
-  user: 'mtakano',
-  password: null,
-  port: 5432,
-  // ssl: true,
-  max: 20, // set pool max size to 20
-  idleTimeoutMillis: 1000, // close idle clients after 1 second
-};
+const { cn } = require('../../config/psql.js');
 
 const db = pgp(cn);
 
@@ -101,14 +88,6 @@ const addPurchase = (ind, product, user, rating) => (
   VALUES ('${user}', '${product}', '${rating}')
   ON CONFLICT ON CONSTRAINT no_duplicate_purchase DO UPDATE SET rating = EXCLUDED.rating
   `)
-  // db.none('INSERT INTO purchase (user_id, product_id, rating) VALUES ($/category/) ON CONFLICT (category_id) DO NOTHING', { category })
-  // db.tx(t => t.batch([
-  //   t.none('UPDATE purchase SET rating=$/rating/ WHERE user_id=$/user/ AND product_id=$/product/', { product, user, rating }),
-  //   t.none(`INSERT INTO purchase (product_id, user_id, rating)
-  //   SELECT $/product/, $/user/, $/rating/
-  //   WHERE NOT EXISTS (SELECT 1 FROM purchase WHERE user_id=$/user/ AND product_id=$/product/)
-  //   `, { user, product, rating }),
-  // ]))
 );
 
 const deleteAll = () => (

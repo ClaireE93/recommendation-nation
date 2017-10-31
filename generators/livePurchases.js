@@ -1,34 +1,67 @@
 const AWS = require('aws-sdk');
 const { PURCHASE_URL } = require('../config/messageUrls.js');
-
-// const REC_REQUEST_URL = 'https://sqs.us-east-2.amazonaws.com/402690953069/recRequests';
+const { setupParams } = require('./config.js');
+const mongo = require('../db/recommendations');
 
 AWS.config.loadFromPath('./config/development.json');
 
 const sqs = new AWS.SQS({ apiVersion: '2012-11-05' });
 
-const generateCart = () => {
-  const result = {
-    user_id: Math.ceil(Math.random() * 50000),
-  };
-  const cart = [];
-  const tot = Math.ceil(Math.random() * 10); // Pick a random number of items
-  for (let i = 0; i < tot; i += 1) {
-    const obj = {
-      productId: Math.ceil(Math.random() * 10000),
-      category: Math.ceil(Math.random() * 1000),
-      rating: Math.ceil(Math.random() * 5),
-    };
-    cart.push(obj);
+const shuffle = (arr) => {
+  const result = arr.slice();
+  let cur = arr.length;
+  while (cur) {
+    const i = Math.floor(Math.random() * cur);
+    cur -= 1;
+    [result[i], result[cur]] = [result[cur], result[i]];
   }
-  result.shopping_cart = cart;
-  return JSON.stringify(result);
+
+  return result;
 };
 
-const createPurchase = () => {
+const addOnePurchase = productId => (
+  {
+    category: Math.ceil(Math.random() * setupParams.categories), // This doesn't matter
+    rating: +(Math.random() * 5).toFixed(4),
+    productId,
+  }
+);
+
+// This function ensures that at least one purchase is from a recommendation
+// which is needed to calculate MAE. If this is not hard coded, the permutations
+// of purchases is so high such that most purchases will not contain a rec and MAE
+// will remain undefined/0
+const calcPurchases = (recs) => {
+  const cart = [];
+  const numFromRecs = Math.ceil(Math.random() * 10);
+  let nonRecs = Math.ceil(Math.random() * 15) - numFromRecs;
+  const shuffledRecs = shuffle(Object.keys(recs));
+  let pointer = 0;
+  while (pointer < numFromRecs && shuffledRecs[pointer] !== undefined) {
+    cart.push(addOnePurchase(Number(shuffledRecs[pointer])));
+    pointer += 1;
+  }
+  while (nonRecs > 0) {
+    cart.push(addOnePurchase(Math.ceil(Math.random() * setupParams.products)));
+    nonRecs -= 1;
+  }
+  return cart;
+};
+
+// Create cart
+async function generateCart() {
+  const result = {
+    user_id: Math.ceil(Math.random() * setupParams.users),
+  };
+  const data = await mongo.fetch(result.user_id);
+  result.shopping_cart = calcPurchases(data.recommendations);
+  return JSON.stringify(result);
+}
+
+async function createPurchase() {
   const params = {
     DelaySeconds: 10,
-    MessageBody: generateCart(),
+    MessageBody: await generateCart(),
     QueueUrl: PURCHASE_URL,
   };
 
@@ -41,25 +74,7 @@ const createPurchase = () => {
       }
     });
   });
-};
-
-//
-//
-// // const historic = require('./historic.js');
-// const db = require('../db/purchases/index.js');
-//
-// // This is totally random
-// // TODO: Use category data to make not random
-// // TODO: This should send a message to the message bus for queueing, not add
-// // directly to DB
-//
-// const createPurchase = (users, products) => {
-//   const user = Math.ceil(Math.random() * users);
-//   const product = Math.ceil(Math.random() * products);
-//   const rating = Math.ceil(Math.random() * 5);
-//   return db.addPurchase(null, product, user, rating);
-// };
-
+}
 
 module.exports = {
   createPurchase,
