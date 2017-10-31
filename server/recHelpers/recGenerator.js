@@ -15,6 +15,8 @@ let productObj = {}; // Mapping product id to matrix index
 let productArr = []; // Mapping matrix index to product id
 let matrix = [];
 
+// Create writeable node stream class for streaming out all purchase records into
+// user x product matrix
 class MatrixWriteable extends Writable {
   constructor(inputMatrix) {
     super(inputMatrix);
@@ -94,13 +96,15 @@ const generateMatrix = () => {
     });
 };
 
+// Spawn python child process that takes in matrix via stdin, generates recs,
+// and adds to mongo and elasticsearch DBs
 const generateRecs = () => {
   PythonShell.defaultOptions = { scriptPath: __dirname };
   const path = 'svd.py';
   const pyshell = new PythonShell(path);
   const chunking = 5000;
 
-  // Slice array down and send
+  // Slice array down and send for performance
   const cuts = Math.ceil(matrix.length / chunking);
   const toSend = [];
   const multiplier = setupParams.users / cuts;
@@ -122,11 +126,11 @@ const generateRecs = () => {
     obj = null;
     toSend[i] = null;
   }
+
+  // Received a message sent from the Python script (a simple "print" statement)
   // pyshell.on('message', (message) => {
-  //   // received a message sent from the Python script (a simple "print" statement)
   //   console.log('message: ', message);
   // });
-
 
   // end the input stream and allow the process to exit
   pyshell.end((err) => {
@@ -142,8 +146,6 @@ const populateRecommendations = () => {
       generateRecs()
     ));
 };
-
-// populateRecommendations();
 
 module.exports = {
   populateRecommendations,

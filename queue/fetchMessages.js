@@ -7,7 +7,6 @@ const elastic = require('../server/elasticsearch');
 AWS.config.loadFromPath('./config/development.json');
 const sqs = new AWS.SQS({ apiVersion: '2012-11-05' });
 
-// mongo.add({ 5: 1.5, 3: 4.3 }, 3, 2 });
 // MAE = sumAllPurchases(abs(actual - expected)) / total
 // Calculate MAE for user
 const calcMAE = (expected = {}, actual) => {
@@ -28,7 +27,6 @@ const calcMAE = (expected = {}, actual) => {
   return numerator / tot;
 };
 
-// FIXME: Uses hardcoded numbers for now
 // Update user's MAE based on actual purchases
 const updateMAE = purchases => (
   mongo.fetch(purchases.user_id)
@@ -114,7 +112,7 @@ const params = {
   WaitTimeSeconds: 0,
 };
 
-// Check for new purchases
+// Check for purchase messages
 const receivePurchases = () => {
   params.QueueUrl = PURCHASE_URL;
 
@@ -157,10 +155,6 @@ const sendRecs = (object) => {
   });
 };
 
-// TODO: This function should fetch recommendations by user id from mongo
-// And publish user and recs to the recResponse message bus
-// For now, hard code the user so it pulls the one user that's in the mongo DB
-// Replace with actual user once recommendation service works!
 // Receive requests for user recommendations
 const receiveRequests = () => {
   params.QueueUrl = REC_REQUEST_URL;
@@ -170,11 +164,8 @@ const receiveRequests = () => {
       throw err;
     } else {
       const user = JSON.parse(data.Messages[0].Body).user_id;
-      console.log('user is', user);
       mongo.fetch(user)
-      // mongo.fetch(3) // FIXME: Remove for live data
         .then((recData) => {
-          console.log('fetched data is', recData);
           if (recData) {
             return sendRecs(recData);
           }

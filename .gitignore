@@ -1,6 +1,7 @@
 # Project specific
 config/messageUrls.js
 config/development.json
+config/psql.js
 
 # OS X
 .DS_Store

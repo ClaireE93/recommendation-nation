@@ -11,6 +11,8 @@ const app = express();
 // 2) Process messages @ given interval
 // 3) Run recommendation update script (recHelpers/recGenerator.js) @ interval
 
+
+// NOTE: This is here for development in case elasticsearch index needs to be changed
 // const initElasticsearch = () => {
 //   elastic.indexExists()
 //     .then((exists) => {
@@ -28,14 +30,11 @@ const app = express();
 // initElasticsearch();
 
 // Simulate message bus requests once a minute.
-
-createPurchase();
-
 const startIntervals = () => {
   setInterval(() => {
     createPurchase();
     createRequest();
-  }, 5000);
+  }, 1000);
 
   const DAILY = 1000 * 60 * 60 * 24;
   const MINUTE = 1000 * 60;
@@ -47,12 +46,13 @@ const startIntervals = () => {
   }, MINUTE);
 
   // Regenerate recommendations once a day
+  // NOTE: This could be a cron job
   setInterval(() => {
     populateRecommendations();
   }, DAILY);
 };
 
-// startIntervals();
+startIntervals();
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => {});

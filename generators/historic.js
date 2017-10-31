@@ -1,6 +1,7 @@
 const db = require('../db/purchases/index.js');
 const uniqBy = require('lodash.uniqby');
 
+// Generate and heap insert users, categories, products, and purchases
 const genUsers = (numUsers) => {
   const final = [];
   for (let i = 1; i <= numUsers; i += 1) {
@@ -51,32 +52,24 @@ const genPurchases = (numPurchases, numUsers, numProducts) => {
   return db.heapInsertPurchases(result);
 };
 
-const setup = (numUsers, numProducts, numCategories) => (
-  // Clear DB, generate users, then categories, then products
-  db.deleteAll()
-    .then(() => (
-      genUsers(numUsers)
-    ))
-    .then(() => (
-      genCategories(numCategories)
-    ))
-    .then(() => (
-      genProducts(numProducts, numCategories)
-    ))
-    .catch((err) => {
-      throw err;
-    })
-);
-
+// Clear DB, generate users, then categories, then products
 const initialSetup = (setupParams) => {
   const {
     users,
     products,
     categories,
-    purchases,
   } = setupParams;
 
-  return setup(users, products, categories, purchases)
+  return db.deleteAll()
+    .then(() => (
+      genUsers(users)
+    ))
+    .then(() => (
+      genCategories(categories)
+    ))
+    .then(() => (
+      genProducts(products, categories)
+    ))
     .catch((err) => {
       throw err;
     });
@@ -84,7 +77,6 @@ const initialSetup = (setupParams) => {
 
 // Export functions for testing
 module.exports = {
-  setup,
   genUsers,
   genProducts,
   genPurchases,
