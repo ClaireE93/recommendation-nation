@@ -55,7 +55,6 @@ def getUserRecs(user_ID, original, preds_df):
 
 def main():
     lines = read_in()
-    print "IN MAIN"
 
     # Construct arguments from stdin
     components = lines[0]
@@ -74,7 +73,6 @@ def main():
     R_demeaned = R - user_ratings_mean.reshape(-1, 1)
     # U, Sigma, VT = randomized_svd(R_demeaned, n_components=components, n_iter=5, random_state=None)
     U, Sigma, VT = svds(R_demeaned, k=components)
-    print "U SIGMA VT CREATED"
 
     # Convert sigma from flat array to dimensional array with diagonals filled in
     Sigma = np.diag(Sigma)
@@ -88,7 +86,6 @@ def main():
     original = pd.DataFrame(matrix, index=users, columns=products)
 
     # Iterate over all users and construct recommendations
-    print "ENTERING LOOP"
     for row in preds_df.itertuples():
         getUserRecs(row[0], original, preds_df)
 
