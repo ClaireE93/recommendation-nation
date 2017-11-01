@@ -1,6 +1,10 @@
-# Project Name
+# Recommendation Nation
 
-The project description
+This app is a clone of Amazon's general product recommendation server engine.
+
+This microservice in particular generates user recommendations using Collaborative Filtering. Recommendations are calculated using Singular Value Decomposition (SVD) and analyzed using Mean Absolute Error (MAE).
+
+This service is connected to the larger clone using Amazon's Simple Queue Service (SQS).
 
 ## Roadmap
 
@@ -28,12 +32,11 @@ pip install -r requirements.txt
 
 To start the app, run the following:
 ```
-node db/purchases/setup.js
-node generators/historic.js
+createdb purchases
+node setup/index.js
 ```
-Once the database is seeded using historic.js, run the following:
+Once the database is setup and seeded, run the following:
 ```
-npm run startdb
 npm start
 ```
 
@@ -43,7 +46,8 @@ npm start
 - Express
 - Postgresql 9.6.x
 - MongoDB
-- Mongoose
+- Python
+- SciKit
 
 ## Other Information
 

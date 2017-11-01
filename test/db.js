@@ -1,6 +1,5 @@
 /* eslint-env mocha */
 const pg = require('pg');
-const mongoose = require('mongoose');
 const { expect } = require('chai');
 const db = require('../db/purchases/index.js');
 const mongo = require('../db/recommendations/index.js');
@@ -180,23 +179,19 @@ describe('Purchases Database Tests', () => {
 });
 
 describe('Recommendation Database Tests', () => {
-  before((done) => {
-    mongoose.createConnection('mongodb://localhost/recstest', done);
-  });
-
-  beforeEach((done) => {
-    Recs.remove({}, () => { done(); });
-  });
-
   it('Should add a recommendation', (done) => {
-    Recs.create({ user: 5, recommendations: { 5: 1.3 }, count: 1 }, (err) => {
-      if (err) { throw err; }
-      Recs.find((err, result) => {
-        expect(result.length).to.equal(1);
-        expect(result[0].user).to.equal(5);
-        done();
-      });
-    });
+    Recs.update(
+      { user: 5 },
+      { user: 5, recommendations: { 5: 1.3 }, count: 1 },
+      { upsert: true, setDefaultsOnInsert: true },
+      () => {
+        Recs.findOne({ user: 5 }, (err, result) => {
+          expect(result.user).to.equal(5);
+          expect(result.recommendations).to.deep.equal({ 5: 1.3 });
+          done();
+        });
+      },
+    );
   });
 
   it('Should have a working add and fetch function', (done) => {
@@ -210,11 +205,5 @@ describe('Recommendation Database Tests', () => {
         expect(data.user).to.equal(10);
         done();
       });
-  });
-
-  after((done) => {
-    mongoose.connection.db.dropDatabase(() => {
-      mongoose.connection.close(done);
-    });
   });
 });

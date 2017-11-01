@@ -1,23 +1,17 @@
 /* eslint-env mocha */
 const pg = require('pg');
 const { expect } = require('chai');
-const db = require('../db/purchases/index.js');
 const gen = require('../generators/historic.js');
+const { createPurchase } = require('../generators/livePurchases.js');
+const { createRequest } = require('../generators/liveRequests.js');
 
-describe('Purchases Database Tests', () => {
+describe('Seed Generator Tests', () => {
   let client;
   const connectionString = 'postgres://localhost:5432/purchases';
 
   beforeEach((done) => {
     client = new pg.Client(connectionString);
-    client.connect();
-    db.deleteAll()
-      .then(() => {
-        done();
-      })
-      .catch((err) => {
-        throw err;
-      });
+    client.connect(done);
   });
 
   afterEach(() => {
@@ -28,11 +22,11 @@ describe('Purchases Database Tests', () => {
     const testNum = 15;
     gen.genUsers(testNum)
       .then(() => {
-        const queryStr = 'SELECT * FROM users';
+        const queryStr = 'SELECT * FROM users WHERE user_id=15';
         return client.query(queryStr);
       })
       .then((results) => {
-        expect(results.rows.length).to.equal(testNum);
+        expect(results.rows.length).to.equal(1);
         done();
       })
       .catch((err) => {
@@ -44,11 +38,11 @@ describe('Purchases Database Tests', () => {
     const testNum = 15;
     gen.genCategories(testNum)
       .then(() => {
-        const queryStr = 'SELECT * FROM categories';
+        const queryStr = 'SELECT * FROM categories WHERE category_id=15';
         return client.query(queryStr);
       })
       .then((results) => {
-        expect(results.rows.length).to.equal(testNum);
+        expect(results.rows.length).to.equal(1);
         done();
       });
   });
@@ -61,11 +55,11 @@ describe('Purchases Database Tests', () => {
         gen.genProducts(testNum, testCat)
       ))
       .then(() => {
-        const queryStr = 'SELECT * FROM products';
+        const queryStr = 'SELECT * FROM products WHERE product_id=15';
         return client.query(queryStr);
       })
       .then((results) => {
-        expect(results.rows.length).to.equal(testNum);
+        expect(results.rows.length).to.equal(1);
         done();
       });
   });
@@ -86,34 +80,30 @@ describe('Purchases Database Tests', () => {
         gen.genPurchases(testNum, testUsers, testProd)
       ))
       .then(() => {
-        const queryStr = 'SELECT * FROM purchase';
+        const queryStr = 'SELECT * FROM purchase WHERE user_id=15';
         return client.query(queryStr);
       })
       .then((results) => {
-        expect(results.rows.length).to.be.within(1, testNum);
+        expect(results.rows.length).to.be.at.least(1);
         done();
       });
   });
 });
 
-// describe('Live Message Generators', () => {
-//   it('should generate live purchases', () => {
-//
-//   });
-//
-//   it('should generate live requests', () => {
-//
-//   });
-//
-//   it('should check for purchases', () => {
-//
-//   });
-//
-//   it('should check for requests', () => {
-//
-//   });
-//
-//   it('should delete messages once they are consumed', () =>{
-//
-//   });
-// });
+describe('Live Message Generators', () => {
+  it('should generate live purchases', (done) => {
+    createPurchase()
+      .then((data) => {
+        expect(data.MessageId.length).to.be.at.least(1);
+        done();
+      });
+  });
+
+  it('should generate live requests', (done) => {
+    createRequest()
+      .then((data) => {
+        expect(data.MessageId.length).to.be.at.least(1);
+        done();
+      });
+  });
+});
