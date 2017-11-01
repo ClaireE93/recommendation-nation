@@ -51,7 +51,7 @@ changes.
 
 ### Rebase changes from master into your branch
 
-This is generally useful only if you are working on multiple features simulatenously. Since you are the primary (and only) commiter on your repo, you may be able to skip this step if you are working on features sequentially.
+This is generally useful only if you are working on multiple features simultaneously. Since you are the primary (and only) commiter on your repo, you may be able to skip this step if you are working on features sequentially.
 
 Once you are done working on your feature, you can begin the process of getting
 your code merged into the master branch. Step 1 is to rebase
@@ -124,7 +124,7 @@ Thanks for contributing!
 
 This is just to help you organize your process
 
-- [ ] Did I cut my work branch off of master (don't cut new branches from existing feature brances)?
+- [ ] Did I cut my work branch off of master (don't cut new branches from existing feature branches)?
 - [ ] Did I follow the correct naming convention for my branch?
 - [ ] Is my branch focused on a single main change?
   - [ ] Do all of my changes directly relate to this change?
@@ -139,7 +139,7 @@ no problem getting your changes merged in.
 
 
 <!-- Links -->
-[style guide]: https://github.com/reactorcore/style-guide
+[style guide]: https://github.com/airbnb/javascript
 [curriculum workflow diagram]: http://i.imgur.com/p0e4tQK.png
 [Git Flow]: http://nvie.com/posts/a-successful-git-branching-model/
 [GitHub Flow]: http://scottchacon.com/2011/08/31/github-flow.html

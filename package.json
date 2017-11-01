@@ -6,7 +6,6 @@
   "scripts": {
     "test": "concurrently 'mocha test/db.js' 'mocha test/generators.js'",
     "start": "nodemon server/index.js",
-    "startdb": "node db/recommendations/index.js",
     "test:es6": "mocha --compilers js:babel-register test/db.js; RES=$?; kill %1; exit $RES"
   },
   "repository": {
