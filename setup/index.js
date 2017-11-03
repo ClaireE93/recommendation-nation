@@ -15,6 +15,7 @@ const seedAll = () => {
     .then(initMapping)
     .then(populateRecommendations)
     .then(() => {
+      console.log('recommendations seeded');
       process.exit();
     })
     .catch((err) => {
@@ -33,6 +34,7 @@ const reseed = () => {
     ))
     .then(populateRecommendations)
     .then(() => {
+      console.log('recommendations seeded');
       process.exit();
     })
     .catch((err) => {
@@ -41,28 +43,29 @@ const reseed = () => {
 };
 
 // Check if DBs have entries. If yes, exit. If no, run setup script
-// getUserCount()
-//   .then((count) => {
-//     if (count >= setupParams.users) {
-//       console.log('data already seeded');
-//       process.exit();
-//     } else {
-//       reseed();
-//     }
-//   })
-//   .catch(() => {
-//     seedAll();
-//   });
-
-
-setup()
-  .then(seedDB)
-  .then(initIndex)
-  .then(initMapping)
-  .then(populateRecommendations)
-  .then(() => {
-    process.exit();
+getUserCount()
+  .then((count) => {
+    if (count > setupParams.users) {
+    // if (count >= setupParams.users) {
+      console.log('data already seeded');
+      process.exit();
+    } else {
+      reseed();
+    }
   })
-  .catch((err) => {
-    throw err;
+  .catch(() => {
+    seedAll();
   });
+
+
+// setup()
+//   .then(seedDB)
+//   .then(initIndex)
+//   .then(initMapping)
+//   .then(populateRecommendations)
+//   .then(() => {
+//     process.exit();
+//   })
+//   .catch((err) => {
+//     throw err;
+//   });

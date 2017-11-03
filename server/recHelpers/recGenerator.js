@@ -45,7 +45,6 @@ class MatrixWriteable extends Writable {
 
 const getPurchases = () => (
   new Promise((resolve) => {
-    console.log('in get purchases')
     client.connect();
     const query = new QueryStream('SELECT * FROM purchase');
     const stream = client.query(query);
@@ -60,7 +59,6 @@ const getPurchases = () => (
 // Spawn python child process that takes in matrix via stdin, generates recs,
 // and adds to mongo and elasticsearch DBs
 const generateRecs = () => {
-  console.log('starting python')
   PythonShell.defaultOptions = { scriptPath: __dirname };
   const path = 'svd.py';
   const pyshell = new PythonShell(path);
@@ -88,6 +86,7 @@ const generateRecs = () => {
     obj = null;
     toSend[i] = null;
   }
+  console.log('args sent to python');
 
   // Received a message sent from the Python script (a simple "print" statement)
   // pyshell.on('message', (message) => {
@@ -95,15 +94,18 @@ const generateRecs = () => {
   // });
 
   // end the input stream and allow the process to exit
-  pyshell.end((err) => {
-    if (err) {
-      throw err;
-    }
+  return new Promise((resolve, reject) => {
+    pyshell.end((err) => {
+      if (err) {
+        reject(err);
+      }
+      console.log('Python finished');
+      resolve();
+    });
   });
 };
 
 const generateMatrix = () => {
-  console.log('generating matrix')
   let users;
   let products;
 
@@ -126,18 +128,15 @@ const generateMatrix = () => {
 
   return db.getAllUsers()
     .then((data) => {
-      console.log('got all users')
       users = data;
       return db.getAllProducts();
     })
     .then((data) => {
-      console.log('got all products')
       products = data;
       buildMatrix();
       return getPurchases();
     })
     .then(() => {
-      console.log('got all purchases')
       userObj = null;
       productObj = null;
     })

@@ -11,8 +11,8 @@ services:
         retries: 5
     logging:
       driver: none
-    # volumes:
-    #   - "mongodata:/data/db"
+    volumes:
+      - "mongodata:/data/db"
   postgres:
     restart: always
     image: "postgres:9.6"
@@ -27,12 +27,11 @@ services:
         interval: 10s
         timeout: 10s
         retries: 5
-    # volumes:
-    #   - "postgresdata:/var/lib/postgresql/data"
+    volumes:
+      - "postgresdata:/var/lib/postgresql/data"
     logging:
       driver: none
   elasticsearch:
-    # "curl --silent --fail localhost:9200/_cluster/health || exit 1"
     image: elasticsearch:latest
     ports:
       - "9200:9200"
@@ -43,8 +42,8 @@ services:
         interval: 5s
         timeout: 10s
         retries: 10
-    # volumes:
-    #   - "elasticdata:/usr/share/elasticsearch/data"
+    volumes:
+      - "elasticdata:/usr/share/elasticsearch/data"
   kibana:
     image: kibana:latest
     ports:
@@ -73,7 +72,7 @@ services:
       POSTGRES_PASSWORD: '123'
       POSTGRES_DB: 'purchases'
     command: ["npm", "start"]
-# volumes:
-#   elasticdata:
-#   mongodata:
-#   postgresdata:
+volumes:
+  elasticdata:
+  mongodata:
+  postgresdata:
