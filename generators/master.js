@@ -5,7 +5,7 @@ const { setupParams } = require('./config.js');
 let start;
 let end;
 
-const seedDB = (isReseed) => (
+const seedDB = () => (
   historic.initialSetup(setupParams)
     .then(() => {
       start = Date.now();

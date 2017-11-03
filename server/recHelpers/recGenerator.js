@@ -5,9 +5,9 @@ const { Writable } = require('stream');
 const PythonShell = require('python-shell');
 const db = require('../../db/purchases/index.js');
 const { setupParams } = require('../../generators/config.js');
-const { url } = require('../../config/psql.js');
+const { cn } = require('../../config/psql.js');
 
-const client = new pg.Client(url);
+const client = new pg.Client(cn);
 
 let userObj = {}; // Mapping user id to matrix index
 let userArr = []; // Mapping matrix index to user id
@@ -45,6 +45,7 @@ class MatrixWriteable extends Writable {
 
 const getPurchases = () => (
   new Promise((resolve) => {
+    console.log('in get purchases')
     client.connect();
     const query = new QueryStream('SELECT * FROM purchase');
     const stream = client.query(query);
@@ -59,6 +60,7 @@ const getPurchases = () => (
 // Spawn python child process that takes in matrix via stdin, generates recs,
 // and adds to mongo and elasticsearch DBs
 const generateRecs = () => {
+  console.log('starting python')
   PythonShell.defaultOptions = { scriptPath: __dirname };
   const path = 'svd.py';
   const pyshell = new PythonShell(path);
@@ -101,6 +103,7 @@ const generateRecs = () => {
 };
 
 const generateMatrix = () => {
+  console.log('generating matrix')
   let users;
   let products;
 
@@ -123,15 +126,18 @@ const generateMatrix = () => {
 
   return db.getAllUsers()
     .then((data) => {
+      console.log('got all users')
       users = data;
       return db.getAllProducts();
     })
     .then((data) => {
+      console.log('got all products')
       products = data;
       buildMatrix();
       return getPurchases();
     })
     .then(() => {
+      console.log('got all purchases')
       userObj = null;
       productObj = null;
     })
