@@ -1,7 +1,7 @@
 const express = require('express');
 const { createPurchase } = require('../generators/livePurchases.js');
 const { createRequest } = require('../generators/liveRequests.js');
-const { processAllMessages } = require('../queue/fetchMessages.js');
+const { recRequest, purchaseRequest } = require('../queue/fetchMessages.js');
 const { populateRecommendations } = require('./recHelpers/recGenerator.js');
 
 const app = express();
@@ -13,19 +13,20 @@ const app = express();
 
 // Simulate message bus requests once a minute.
 const DAILY = 1000 * 60 * 60 * 24;
-const MINUTE = 1000 * 60;
 const startIntervals = () => {
+  recRequest.start();
+  purchaseRequest.start();
+
   setInterval(() => {
     createPurchase();
     createRequest();
-  }, 1000);
-
+  }, 10000);
 
   // Process all messages once a minute
-  setInterval(() => {
-    processAllMessages(true); // Process purchases
-    processAllMessages(false); // Process requests
-  }, MINUTE);
+  // setInterval(() => {
+  //   processAllMessages(true); // Process purchases
+  //   processAllMessages(false); // Process requests
+  // }, MINUTE);
 
   // Regenerate recommendations once a day
   // NOTE: This could be a cron job

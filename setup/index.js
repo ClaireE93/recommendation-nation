@@ -36,7 +36,6 @@ const reseed = () => (
 // Check if DBs have entries. If yes, exit. If no, run setup script
 getUserCount()
   .then((data) => {
-    // if (data[0].count > setupParams.users) {
     if (data[0].count >= setupParams.users) {
       console.log('data already seeded');
       process.exit();

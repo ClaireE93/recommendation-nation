@@ -1,11 +1,29 @@
 const AWS = require('aws-sdk');
-const { REC_REQUEST_URL, PURCHASE_URL, REC_SEND_URL } = require('../config/messageUrls.js');
+const Consumer = require('sqs-consumer');
+const {
+  REC_REQUEST_URL,
+  PURCHASE_URL,
+  REC_SEND_URL,
+  ACCESS_KEY,
+  SECRET_KEY,
+  REGION,
+} = require('../config/messageUrls.js');
 const db = require('../db/purchases');
 const mongo = require('../db/recommendations');
 const elastic = require('../server/elasticsearch');
 
 AWS.config.loadFromPath('./config/development.json');
 const sqs = new AWS.SQS({ apiVersion: '2012-11-05' });
+
+AWS.config.update({
+  region: REGION,
+  accessKeyId: ACCESS_KEY,
+  secretAccessKey: SECRET_KEY,
+});
+
+
+
+
 
 // MAE = sumAllPurchases(abs(actual - expected)) / total
 // Calculate MAE for user
@@ -188,25 +206,16 @@ const receiveRequests = () => {
 };
 
 // Go through all incoming messages for given bus
-const processAllMessages = isPurchase => {
+const processAllMessages = (isPurchase) => {
   const QueueUrl = isPurchase ? PURCHASE_URL : REC_REQUEST_URL;
   const func = isPurchase ? receivePurchases : receiveRequests;
   sqs.getQueueAttributes({ AttributeNames: ['ApproximateNumberOfMessages'], QueueUrl }, (err, data) => {
     const num = data.Attributes.ApproximateNumberOfMessages;
-    const promiseArr = [];
+    console.log('messages to process', num);
     for (let i = 0; i < num; i += 1) {
-      promiseArr.push(func());
+      func();
     }
-    Promise.all(promiseArr)
-    .then(() => {
-      resolve();
-    })
-    .catch(() => {
-      reject();
-    });
   });
-  // new Promise((resolve, reject) => {
-  // })
 };
 
 const purgeQueue = (url) => {
@@ -224,6 +233,53 @@ const purgeQueue = (url) => {
   });
 };
 
+const recRequest = Consumer.create({
+  queueUrl: REC_REQUEST_URL,
+  handleMessage: (message, done) => {
+    const parsedMessage = JSON.parse(message.Body);
+    const user = parsedMessage.user_id;
+    return mongo.fetch(user)
+      .then((recData) => {
+        if (recData) {
+          return sendRecs(recData);
+        }
+        const emptyResp = {
+          user_id: user,
+          recommendations: {},
+          count: 0,
+        };
+        return sendRecs(emptyResp);
+      })
+      .then(() => {
+        done();
+      });
+  },
+  sqs: new AWS.SQS(),
+});
+
+const purchaseRequest = Consumer.create({
+  queueUrl: PURCHASE_URL,
+  handleMessage: (message, done) => {
+    const body = JSON.parse(message.Body);
+    updateMAE(body)
+      .then(() => {
+        updateDB(body);
+      })
+      .then(() => {
+        done();
+      });
+  },
+  sqs: new AWS.SQS(),
+});
+
+recRequest.on('error', (err) => {
+  console.error(err.message);
+});
+
+purchaseRequest.on('error', (err) => {
+  console.error(err.message);
+});
+
 // Export functions for unit testing
 module.exports = {
   processAllMessages,
@@ -232,4 +288,6 @@ module.exports = {
   purgeQueue,
   calcMAE,
   checkPurchase,
+  recRequest,
+  purchaseRequest,
 };
