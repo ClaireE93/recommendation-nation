@@ -20,6 +20,8 @@ const indexExists = () => (
   })
 );
 
+
+
 // Initialize index mapping
 const initMapping = () => (
   elasticClient.indices.putMapping({
@@ -34,6 +36,21 @@ const initMapping = () => (
     },
   })
 );
+
+const initElasticsearch = () => {
+  indexExists()
+    .then((exists) => {
+      if (exists) {
+        return deleteIndex();
+      }
+      return exists;
+    })
+    .then(initIndex)
+    .then(initMapping)
+    .catch((err) => {
+      throw err;
+    });
+};
 
 // Add record to elasticsearch
 const addRec = rec => (
@@ -55,4 +72,5 @@ module.exports = {
   indexExists,
   initMapping,
   addRec,
+  initElasticsearch,
 };

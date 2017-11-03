@@ -12,7 +12,7 @@ services:
     logging:
       driver: none
     volumes:
-      - "mongodata:/data/db"
+      - "mongodata1:/data/db"
   postgres:
     restart: always
     image: "postgres:9.6"
@@ -28,7 +28,7 @@ services:
         timeout: 10s
         retries: 5
     volumes:
-      - "postgresdata:/var/lib/postgresql/data"
+      - "postgresdata1:/var/lib/postgresql/data"
     logging:
       driver: none
   elasticsearch:
@@ -43,7 +43,7 @@ services:
         timeout: 10s
         retries: 10
     volumes:
-      - "elasticdata:/usr/share/elasticsearch/data"
+      - "elasticdata1:/usr/share/elasticsearch/data"
   kibana:
     image: kibana:latest
     ports:
@@ -73,6 +73,6 @@ services:
       POSTGRES_DB: 'purchases'
     command: ["npm", "start"]
 volumes:
-  elasticdata:
-  mongodata:
-  postgresdata:
+  elasticdata1:
+  mongodata1:
+  postgresdata1:

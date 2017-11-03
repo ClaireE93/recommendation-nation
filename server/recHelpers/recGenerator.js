@@ -86,7 +86,6 @@ const generateRecs = () => {
     obj = null;
     toSend[i] = null;
   }
-  console.log('args sent to python');
 
   // Received a message sent from the Python script (a simple "print" statement)
   // pyshell.on('message', (message) => {
@@ -99,7 +98,6 @@ const generateRecs = () => {
       if (err) {
         reject(err);
       }
-      console.log('Python finished');
       resolve();
     });
   });

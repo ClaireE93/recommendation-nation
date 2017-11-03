@@ -11,25 +11,6 @@ const app = express();
 // 2) Process messages @ given interval
 // 3) Run recommendation update script (recHelpers/recGenerator.js) @ interval
 
-
-// NOTE: This is here for development in case elasticsearch index needs to be changed
-// const initElasticsearch = () => {
-//   elastic.indexExists()
-//     .then((exists) => {
-//       if (exists) {
-//         return elastic.deleteIndex();
-//       }
-//       return exists;
-//     })
-//     .then(elastic.initIndex)
-//     .then(elastic.initMapping)
-//     .catch((err) => {
-//       throw err;
-//     });
-// };
-// initElasticsearch();
-
-
 // Simulate message bus requests once a minute.
 const DAILY = 1000 * 60 * 60 * 24;
 const MINUTE = 1000 * 60;

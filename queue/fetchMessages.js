@@ -188,26 +188,26 @@ const receiveRequests = () => {
 };
 
 // Go through all incoming messages for given bus
-const processAllMessages = isPurchase => (
-  new Promise((resolve, reject) => {
-    const QueueUrl = isPurchase ? PURCHASE_URL : REC_REQUEST_URL;
-    const func = isPurchase ? receivePurchases : receiveRequests;
-    sqs.getQueueAttributes({ AttributeNames: ['ApproximateNumberOfMessages'], QueueUrl }, (err, data) => {
-      const num = data.Attributes.ApproximateNumberOfMessages;
-      const promiseArr = [];
-      for (let i = 0; i < num; i += 1) {
-        promiseArr.push(func());
-      }
-      Promise.all(promiseArr)
-        .then(() => {
-          resolve();
-        })
-        .catch(() => {
-          reject();
-        });
+const processAllMessages = isPurchase => {
+  const QueueUrl = isPurchase ? PURCHASE_URL : REC_REQUEST_URL;
+  const func = isPurchase ? receivePurchases : receiveRequests;
+  sqs.getQueueAttributes({ AttributeNames: ['ApproximateNumberOfMessages'], QueueUrl }, (err, data) => {
+    const num = data.Attributes.ApproximateNumberOfMessages;
+    const promiseArr = [];
+    for (let i = 0; i < num; i += 1) {
+      promiseArr.push(func());
+    }
+    Promise.all(promiseArr)
+    .then(() => {
+      resolve();
+    })
+    .catch(() => {
+      reject();
     });
-  })
-);
+  });
+  // new Promise((resolve, reject) => {
+  // })
+};
 
 const purgeQueue = (url) => {
   const purgeParams = {
