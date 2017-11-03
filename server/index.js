@@ -29,15 +29,16 @@ const app = express();
 // };
 // initElasticsearch();
 
+
 // Simulate message bus requests once a minute.
+const DAILY = 1000 * 60 * 60 * 24;
+const MINUTE = 1000 * 60;
 const startIntervals = () => {
   setInterval(() => {
     createPurchase();
     createRequest();
   }, 1000);
 
-  const DAILY = 1000 * 60 * 60 * 24;
-  const MINUTE = 1000 * 60;
 
   // Process all messages once a minute
   setInterval(() => {

@@ -5,8 +5,10 @@
   "main": ".eslintrc.js",
   "scripts": {
     "test": "concurrently 'mocha test/db.js' 'mocha test/generators.js'",
-    "start": "nodemon server/index.js",
-    "test:es6": "mocha --compilers js:babel-register test/db.js; RES=$?; kill %1; exit $RES"
+    "start": "node setup/index.js && nodemon server/index.js",
+    "setup": "node setup/index.js",
+    "test:es6": "mocha --compilers js:babel-register test/db.js; RES=$?; kill %1; exit $RES",
+    "dev": "nodemon server/index.js"
   },
   "repository": {
     "type": "git",

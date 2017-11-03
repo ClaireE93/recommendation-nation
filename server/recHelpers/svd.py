@@ -5,9 +5,9 @@ from pymongo import MongoClient
 from elasticsearch import Elasticsearch
 from scipy.sparse.linalg import svds
 
-client = MongoClient()
+client = MongoClient('mongodb://mongo:27017/')
 db = client.recs
-es = Elasticsearch()
+es = Elasticsearch(['http://elasticsearch:9200'])
 
 # This function will convert an m x n (users by products, values are ratings) matrix
 # into an m x n recommendation matrix using Singular Value Decomposition (SVD). Then,

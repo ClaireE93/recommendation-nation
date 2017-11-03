@@ -5,9 +5,9 @@ const { Writable } = require('stream');
 const PythonShell = require('python-shell');
 const db = require('../../db/purchases/index.js');
 const { setupParams } = require('../../generators/config.js');
+const { url } = require('../../config/psql.js');
 
-const connectionString = process.env.DATABASE_URL || 'postgres://localhost:5432/purchases';
-const client = new pg.Client(connectionString);
+const client = new pg.Client(url);
 
 let userObj = {}; // Mapping user id to matrix index
 let userArr = []; // Mapping matrix index to user id
@@ -56,46 +56,6 @@ const getPurchases = () => (
   })
 );
 
-const generateMatrix = () => {
-  let users;
-  let products;
-
-  const buildMatrix = () => {
-    const m = products.length;
-    for (let i = 0; i < users.length; i += 1) {
-      userObj[users[i].user_id] = i;
-      userArr.push(users[i].user_id);
-      matrix[i] = Array(m).fill(0);
-    }
-    for (let i = 0; i < products.length; i += 1) {
-      productObj[products[i].product_id] = i;
-      productArr.push(products[i].product_id);
-    }
-    // Clear for garbage collection
-    users = null;
-    products = null;
-    return matrix;
-  };
-
-  return db.getAllUsers()
-    .then((data) => {
-      users = data;
-      return db.getAllProducts();
-    })
-    .then((data) => {
-      products = data;
-      buildMatrix();
-      return getPurchases();
-    })
-    .then(() => {
-      userObj = null;
-      productObj = null;
-    })
-    .catch((err) => {
-      throw err;
-    });
-};
-
 // Spawn python child process that takes in matrix via stdin, generates recs,
 // and adds to mongo and elasticsearch DBs
 const generateRecs = () => {
@@ -140,12 +100,53 @@ const generateRecs = () => {
   });
 };
 
-const populateRecommendations = () => {
+const generateMatrix = () => {
+  let users;
+  let products;
+
+  const buildMatrix = () => {
+    const m = products.length;
+    for (let i = 0; i < users.length; i += 1) {
+      userObj[users[i].user_id] = i;
+      userArr.push(users[i].user_id);
+      matrix[i] = Array(m).fill(0);
+    }
+    for (let i = 0; i < products.length; i += 1) {
+      productObj[products[i].product_id] = i;
+      productArr.push(products[i].product_id);
+    }
+    // Clear for garbage collection
+    users = null;
+    products = null;
+    return matrix;
+  };
+
+  return db.getAllUsers()
+    .then((data) => {
+      users = data;
+      return db.getAllProducts();
+    })
+    .then((data) => {
+      products = data;
+      buildMatrix();
+      return getPurchases();
+    })
+    .then(() => {
+      userObj = null;
+      productObj = null;
+    })
+    .catch((err) => {
+      throw err;
+    });
+};
+
+const populateRecommendations = () => (
   generateMatrix()
     .then(() => (
       generateRecs()
-    ));
-};
+    ))
+);
+
 
 module.exports = {
   populateRecommendations,

@@ -49,6 +49,10 @@ const getAllUsers = () => (
   db.any('SELECT * FROM users')
 );
 
+const getUserCount = () => (
+  db.any('SELECT count(*) from users')
+);
+
 const getOneUser = user => (
   db.any(`SELECT * FROM users WHERE user_id='${user}'`)
 );
@@ -96,6 +100,11 @@ const deleteAll = () => (
     t.none('DELETE FROM products'),
     t.none('DELETE FROM categories'),
     t.none('DELETE FROM users'),
+    t.none('DROP INDEX IF EXISTS category_idx'),
+    t.none('DROP INDEX IF EXISTS products_idx'),
+    t.none('DROP INDEX IF EXISTS users_idx'),
+    t.none('DROP INDEX IF EXISTS user_idx'),
+    t.none('DROP INDEX IF EXISTS product_idx'),
   ]))
 );
 
@@ -126,4 +135,5 @@ module.exports = {
   getOneUser,
   getOneProduct,
   getOneCategory,
+  getUserCount,
 };
