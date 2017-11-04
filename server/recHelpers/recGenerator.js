@@ -7,8 +7,6 @@ const db = require('../../db/purchases/index.js');
 const { setupParams } = require('../../generators/config.js');
 const { cn } = require('../../config/psql.js');
 
-const client = new pg.Client(cn);
-
 let userObj = {}; // Mapping user id to matrix index
 let userArr = []; // Mapping matrix index to user id
 let productObj = {}; // Mapping product id to matrix index
@@ -45,6 +43,7 @@ class MatrixWriteable extends Writable {
 
 const getPurchases = () => (
   new Promise((resolve) => {
+    const client = new pg.Client(cn);
     client.connect();
     const query = new QueryStream('SELECT * FROM purchase');
     const stream = client.query(query);
@@ -67,7 +66,7 @@ const generateRecs = () => {
   // Slice array down and send for performance
   const cuts = Math.ceil(matrix.length / chunking);
   const toSend = [];
-  const multiplier = setupParams.users / cuts;
+  const multiplier = userArr.length / cuts;
   for (let i = 0; i < cuts; i += 1) {
     const startInd = Math.floor(multiplier * i);
     const endInd = Math.floor(multiplier * (i + 1));
@@ -86,7 +85,6 @@ const generateRecs = () => {
     obj = null;
     toSend[i] = null;
   }
-
   // Received a message sent from the Python script (a simple "print" statement)
   // pyshell.on('message', (message) => {
   //   console.log('message: ', message);
@@ -143,12 +141,19 @@ const generateMatrix = () => {
     });
 };
 
-const populateRecommendations = () => (
-  generateMatrix()
+const populateRecommendations = () => {
+  // These objects need to be reset each run since the previous run
+  // sets them all to be null for garbage collection
+  userObj = {};
+  userArr = [];
+  productObj = {};
+  productArr = [];
+  matrix = [];
+  return generateMatrix()
     .then(() => (
       generateRecs()
-    ))
-);
+    ));
+};
 
 
 module.exports = {

@@ -20,19 +20,16 @@ const startIntervals = () => {
   setInterval(() => {
     createPurchase();
     createRequest();
-  }, 10000);
+  }, 1000);
 
-  // Process all messages once a minute
-  // setInterval(() => {
-  //   processAllMessages(true); // Process purchases
-  //   processAllMessages(false); // Process requests
-  // }, MINUTE);
-
-  // Regenerate recommendations once a day
+  // Regenerate recommendations two times a day
   // NOTE: This could be a cron job
   setInterval(() => {
-    populateRecommendations();
-  }, DAILY);
+    populateRecommendations()
+      .then(() => {
+        console.log('Recs reseeded');
+      });
+  }, DAILY / 2);
 };
 
 startIntervals();

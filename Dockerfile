@@ -14,4 +14,4 @@ RUN python -m pip install --user numpy scipy pandas scikit-learn pymongo elastic
 EXPOSE 80
 
 # Run setup when the container launches
-#CMD ["node", "server/index.js"]
+CMD ["npm", "start"]

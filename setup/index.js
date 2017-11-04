@@ -46,16 +46,3 @@ getUserCount()
   .catch(() => {
     seedAll();
   });
-
-
-// setup()
-//   .then(seedDB)
-//   .then(initIndex)
-//   .then(initMapping)
-//   .then(populateRecommendations)
-//   .then(() => {
-//     process.exit();
-//   })
-//   .catch((err) => {
-//     throw err;
-//   });

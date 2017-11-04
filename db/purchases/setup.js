@@ -20,7 +20,6 @@ const setup = () => {
         CONSTRAINT no_duplicate_purchase UNIQUE (product_id, user_id)) `)
     ))
     .then(() => {
-      console.log('Schemas complete');
       client.end();
     })
     .catch((err) => {

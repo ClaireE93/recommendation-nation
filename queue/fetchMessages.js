@@ -21,13 +21,9 @@ AWS.config.update({
   secretAccessKey: SECRET_KEY,
 });
 
-
-
-
-
 // MAE = sumAllPurchases(abs(actual - expected)) / total
 // Calculate MAE for user
-const calcMAE = (expected = {}, actual) => {
+const calcMAE = (expected = {}, actual = []) => {
   let tot = 0;
   const sums = [];
 
@@ -106,54 +102,6 @@ const updateDB = (purchases) => {
     });
 };
 
-const deleteMessage = deleteParams => (
-  new Promise((resolve, reject) => {
-    sqs.deleteMessage(deleteParams, (err, data) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(data);
-      }
-    });
-  })
-);
-
-const params = {
-  AttributeNames: [
-    'SentTimestamp',
-  ],
-  MaxNumberOfMessages: 1,
-  MessageAttributeNames: [
-    'All',
-  ],
-  VisibilityTimeout: 0,
-  WaitTimeSeconds: 0,
-};
-
-// Check for purchase messages
-const receivePurchases = () => {
-  params.QueueUrl = PURCHASE_URL;
-
-  sqs.receiveMessage(params, (err, data) => {
-    if (err) {
-      throw err;
-    } else {
-      const body = JSON.parse(data.Messages[0].Body);
-      return updateMAE(body)
-        .then(() => {
-          updateDB(body);
-        })
-        .then(() => {
-          const deleteParams = {
-            QueueUrl: PURCHASE_URL,
-            ReceiptHandle: data.Messages[0].ReceiptHandle,
-          };
-          return deleteMessage(deleteParams);
-        });
-    }
-  });
-};
-
 // Send user recommendations
 const sendRecs = (object) => {
   const sendParams = {
@@ -170,51 +118,6 @@ const sendRecs = (object) => {
         resolve(data);
       }
     });
-  });
-};
-
-// Receive requests for user recommendations
-const receiveRequests = () => {
-  params.QueueUrl = REC_REQUEST_URL;
-
-  sqs.receiveMessage(params, (err, data) => {
-    if (err) {
-      throw err;
-    } else {
-      const user = JSON.parse(data.Messages[0].Body).user_id;
-      return mongo.fetch(user)
-        .then((recData) => {
-          if (recData) {
-            return sendRecs(recData);
-          }
-          const emptyResp = {
-            user_id: user,
-            recommendations: {},
-            count: 0,
-          };
-          return sendRecs(emptyResp);
-        })
-        .then(() => {
-          const deleteParams = {
-            QueueUrl: REC_REQUEST_URL,
-            ReceiptHandle: data.Messages[0].ReceiptHandle,
-          };
-          return deleteMessage(deleteParams);
-        });
-    }
-  });
-};
-
-// Go through all incoming messages for given bus
-const processAllMessages = (isPurchase) => {
-  const QueueUrl = isPurchase ? PURCHASE_URL : REC_REQUEST_URL;
-  const func = isPurchase ? receivePurchases : receiveRequests;
-  sqs.getQueueAttributes({ AttributeNames: ['ApproximateNumberOfMessages'], QueueUrl }, (err, data) => {
-    const num = data.Attributes.ApproximateNumberOfMessages;
-    console.log('messages to process', num);
-    for (let i = 0; i < num; i += 1) {
-      func();
-    }
   });
 };
 
@@ -238,7 +141,7 @@ const recRequest = Consumer.create({
   handleMessage: (message, done) => {
     const parsedMessage = JSON.parse(message.Body);
     const user = parsedMessage.user_id;
-    return mongo.fetch(user)
+    mongo.fetch(user)
       .then((recData) => {
         if (recData) {
           return sendRecs(recData);
@@ -282,9 +185,6 @@ purchaseRequest.on('error', (err) => {
 
 // Export functions for unit testing
 module.exports = {
-  processAllMessages,
-  receiveRequests,
-  receivePurchases,
   purgeQueue,
   calcMAE,
   checkPurchase,

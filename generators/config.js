@@ -7,10 +7,10 @@ const setupParams = {
 
 // NOTE: Params for testing at small scale
 // const setupParams = {
-//   users: 25000,
-//   products: 500,
-//   categories: 50,
-//   purchases: 2500000,
+//   users: 20,
+//   products: 10,
+//   categories: 3,
+//   purchases: 100,
 // };
 
 module.exports = { setupParams };

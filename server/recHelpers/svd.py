@@ -25,6 +25,7 @@ def main():
     for line in lines[4:]:
         matrix = np.concatenate((matrix, line))
 
+    # print "Input matrix made"
     # Convert list to numpy array for svd operation
     R = np.array(matrix).astype(np.float)
 
@@ -39,6 +40,7 @@ def main():
     # Get table of all predictions
     all_user_predicted_ratings = np.dot(np.dot(U, Sigma), VT) + user_ratings_mean.reshape(-1, 1)
     all_user_predicted_ratings = np.round(all_user_predicted_ratings, 4)
+
 
     # Construct Data Frames for predictions and original ratings
     preds_df = pd.DataFrame(all_user_predicted_ratings, index=users, columns=products)
