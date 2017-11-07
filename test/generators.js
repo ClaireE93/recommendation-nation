@@ -4,13 +4,13 @@ const { expect } = require('chai');
 const gen = require('../generators/historic.js');
 const { createPurchase } = require('../generators/livePurchases.js');
 const { createRequest } = require('../generators/liveRequests.js');
+const { url } = require('../config/psql.js');
 
 describe('Seed Generator Tests', () => {
   let client;
-  const connectionString = 'postgres://localhost:5432/purchases';
 
   beforeEach((done) => {
-    client = new pg.Client(connectionString);
+    client = new pg.Client(url);
     client.connect(done);
   });
 

@@ -2,6 +2,7 @@
 config/messageUrls.js
 config/development.json
 config/psql.js
+config/mongo.js
 
 # OS X
 .DS_Store

@@ -31,7 +31,7 @@ const addOnePurchase = productId => (
 // which is needed to calculate MAE. If this is not hard coded, the permutations
 // of purchases is so high such that most purchases will not contain a rec and MAE
 // will remain undefined/0
-const calcPurchases = (recs) => {
+const calcPurchases = (recs = {}) => {
   const cart = [];
   const numFromRecs = Math.ceil(Math.random() * 10);
   let nonRecs = Math.ceil(Math.random() * 15) - numFromRecs;
@@ -49,32 +49,67 @@ const calcPurchases = (recs) => {
 };
 
 // Create cart
-async function generateCart() {
+// const generateCart = async () => {
+//   const result = {
+//     user_id: Math.ceil(Math.random() * setupParams.users),
+//   };
+//   const data = await mongo.fetch(result.user_id);
+//   result.shopping_cart = calcPurchases(data.recommendations);
+//   return JSON.stringify(result);
+// };
+
+const generateCart = () => {
   const result = {
     user_id: Math.ceil(Math.random() * setupParams.users),
   };
-  const data = await mongo.fetch(result.user_id);
-  result.shopping_cart = calcPurchases(data.recommendations);
-  return JSON.stringify(result);
-}
-
-async function createPurchase() {
-  const params = {
-    DelaySeconds: 10,
-    MessageBody: await generateCart(),
-    QueueUrl: PURCHASE_URL,
-  };
-
-  return new Promise((resolve, reject) => {
-    sqs.sendMessage(params, (err, data) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(data);
-      }
+  return mongo.fetch(result.user_id)
+    .then((data) => {
+      if (!data) { return calcPurchases(); }
+      return calcPurchases(data.recommendations);
+    })
+    .then((finalCart) => {
+      result.shopping_cart = finalCart;
+      return JSON.stringify(result);
     });
-  });
-}
+};
+
+// const createPurchase = async () => {
+//   const params = {
+//     DelaySeconds: 10,
+//     MessageBody: await generateCart(),
+//     QueueUrl: PURCHASE_URL,
+//   };
+//
+//   return new Promise((resolve, reject) => {
+//     sqs.sendMessage(params, (err, data) => {
+//       if (err) {
+//         reject(err);
+//       } else {
+//         resolve(data);
+//       }
+//     });
+//   });
+// };
+
+const createPurchase = () => {
+  generateCart()
+    .then((newCart) => {
+      const params = {
+        DelaySeconds: 10,
+        MessageBody: newCart,
+        QueueUrl: PURCHASE_URL,
+      };
+      return new Promise((resolve, reject) => {
+        sqs.sendMessage(params, (err, data) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(data);
+          }
+        });
+      });
+    });
+};
 
 module.exports = {
   createPurchase,

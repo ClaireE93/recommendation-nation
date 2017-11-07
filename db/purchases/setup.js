@@ -1,7 +1,8 @@
 const pg = require('pg');
+const { cn } = require('../../config/psql.js');
 
-const connectionString = process.env.DATABASE_URL || 'postgres://localhost:5432/purchases';
-const client = new pg.Client(connectionString);
+// const client = new pg.Client(url);
+const client = new pg.Client(cn);
 const setup = () => {
   client.connect();
   return client.query('CREATE TABLE users(id SERIAL, user_id INTEGER PRIMARY KEY)')

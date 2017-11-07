@@ -1,7 +1,7 @@
 const express = require('express');
 const { createPurchase } = require('../generators/livePurchases.js');
 const { createRequest } = require('../generators/liveRequests.js');
-const { processAllMessages } = require('../queue/fetchMessages.js');
+const { recRequest, purchaseRequest } = require('../queue/fetchMessages.js');
 const { populateRecommendations } = require('./recHelpers/recGenerator.js');
 
 const app = express();
@@ -11,45 +11,25 @@ const app = express();
 // 2) Process messages @ given interval
 // 3) Run recommendation update script (recHelpers/recGenerator.js) @ interval
 
-
-// NOTE: This is here for development in case elasticsearch index needs to be changed
-// const initElasticsearch = () => {
-//   elastic.indexExists()
-//     .then((exists) => {
-//       if (exists) {
-//         return elastic.deleteIndex();
-//       }
-//       return exists;
-//     })
-//     .then(elastic.initIndex)
-//     .then(elastic.initMapping)
-//     .catch((err) => {
-//       throw err;
-//     });
-// };
-// initElasticsearch();
-
 // Simulate message bus requests once a minute.
+const DAILY = 1000 * 60 * 60 * 24;
 const startIntervals = () => {
+  recRequest.start();
+  purchaseRequest.start();
+
   setInterval(() => {
     createPurchase();
     createRequest();
   }, 1000);
 
-  const DAILY = 1000 * 60 * 60 * 24;
-  const MINUTE = 1000 * 60;
-
-  // Process all messages once a minute
-  setInterval(() => {
-    processAllMessages(true); // Process purchases
-    processAllMessages(false); // Process requests
-  }, MINUTE);
-
-  // Regenerate recommendations once a day
+  // Regenerate recommendations two times a day
   // NOTE: This could be a cron job
   setInterval(() => {
-    populateRecommendations();
-  }, DAILY);
+    populateRecommendations()
+      .then(() => {
+        console.log('Recs reseeded');
+      });
+  }, DAILY / 2);
 };
 
 startIntervals();

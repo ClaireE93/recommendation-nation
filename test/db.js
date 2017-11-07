@@ -4,13 +4,13 @@ const { expect } = require('chai');
 const db = require('../db/purchases/index.js');
 const mongo = require('../db/recommendations/index.js');
 const { Recs } = require('../db/recommendations/setup.js');
+const { url } = require('../config/psql.js');
 
 describe('Purchases Database Tests', () => {
   let client;
-  const connectionString = 'postgres://localhost:5432/purchases';
 
   beforeEach((done) => {
-    client = new pg.Client(connectionString);
+    client = new pg.Client(url);
     client.connect(done);
   });
 

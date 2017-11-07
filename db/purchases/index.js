@@ -49,6 +49,10 @@ const getAllUsers = () => (
   db.any('SELECT * FROM users')
 );
 
+const getUserCount = () => (
+  db.any('SELECT count(*) from users')
+);
+
 const getOneUser = user => (
   db.any(`SELECT * FROM users WHERE user_id='${user}'`)
 );
@@ -90,12 +94,34 @@ const addPurchase = (ind, product, user, rating) => (
   `)
 );
 
-const deleteAll = () => (
+const removeIndexes = () => (
   db.tx(t => t.batch([
-    t.none('DELETE FROM purchase'),
-    t.none('DELETE FROM products'),
-    t.none('DELETE FROM categories'),
-    t.none('DELETE FROM users'),
+    t.none('DROP INDEX IF EXISTS category_idx'),
+    t.none('DROP INDEX IF EXISTS products_idx'),
+    t.none('DROP INDEX IF EXISTS users_idx'),
+    t.none('DROP INDEX IF EXISTS user_idx'),
+    t.none('DROP INDEX IF EXISTS product_idx'),
+  ]))
+);
+
+const deleteAll = () => (
+  removeIndexes()
+    .then(() => (
+      db.tx(t => t.batch([
+        t.none('DELETE FROM purchase'),
+        t.none('DELETE FROM products'),
+        t.none('DELETE FROM categories'),
+        t.none('DELETE FROM users'),
+      ]))
+    ))
+);
+
+const dropTables = () => (
+  db.tx(t => t.batch([
+    t.none('DROP TABLE IF EXISTS purchase'),
+    t.none('DROP TABLE IF EXISTS products'),
+    t.none('DROP TABLE IF EXISTS categories'),
+    t.none('DROP TABLE IF EXISTS users'),
   ]))
 );
 
@@ -126,4 +152,6 @@ module.exports = {
   getOneUser,
   getOneProduct,
   getOneCategory,
+  getUserCount,
+  dropTables,
 };

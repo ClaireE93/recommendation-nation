@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
+const { url } = require('../../config/mongo.js');
 
-mongoose.connect('mongodb://localhost/recs', { useMongoClient: true });
+mongoose.connect(url, { useMongoClient: true });
 
 const db = mongoose.connection;
 db.on('error', (err) => { throw err; });

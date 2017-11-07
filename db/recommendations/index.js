@@ -10,7 +10,7 @@ const add = (recObj = {}, user = 0, count = 0, mae) => (
       { upsert: true, setDefaultsOnInsert: true },
       () => {
         resolve();
-      },
+      }
     );
   })
 );
@@ -27,8 +27,21 @@ const fetch = (user = 0) => (
   })
 );
 
+const removeRecs = () => (
+  new Promise((resolve, reject) => {
+    Recs.remove({}, (err, data) => {
+      if (err) {
+        reject();
+      } else {
+        resolve(data);
+      }
+    });
+  })
+);
+
 
 module.exports = {
   add,
   fetch,
+  removeRecs,
 };

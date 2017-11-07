@@ -5,9 +5,7 @@ const { Writable } = require('stream');
 const PythonShell = require('python-shell');
 const db = require('../../db/purchases/index.js');
 const { setupParams } = require('../../generators/config.js');
-
-const connectionString = process.env.DATABASE_URL || 'postgres://localhost:5432/purchases';
-const client = new pg.Client(connectionString);
+const { cn } = require('../../config/psql.js');
 
 let userObj = {}; // Mapping user id to matrix index
 let userArr = []; // Mapping matrix index to user id
@@ -45,6 +43,7 @@ class MatrixWriteable extends Writable {
 
 const getPurchases = () => (
   new Promise((resolve) => {
+    const client = new pg.Client(cn);
     client.connect();
     const query = new QueryStream('SELECT * FROM purchase');
     const stream = client.query(query);
@@ -55,6 +54,52 @@ const getPurchases = () => (
     stream.pipe(JSONStream.stringify()).pipe(new MatrixWriteable(matrix));
   })
 );
+
+// Spawn python child process that takes in matrix via stdin, generates recs,
+// and adds to mongo and elasticsearch DBs
+const generateRecs = () => {
+  PythonShell.defaultOptions = { scriptPath: __dirname };
+  const path = 'svd.py';
+  const pyshell = new PythonShell(path);
+  const chunking = 5000;
+
+  // Slice array down and send for performance
+  const cuts = Math.ceil(matrix.length / chunking);
+  const toSend = [];
+  const multiplier = userArr.length / cuts;
+  for (let i = 0; i < cuts; i += 1) {
+    const startInd = Math.floor(multiplier * i);
+    const endInd = Math.floor(multiplier * (i + 1));
+    toSend.push(matrix.slice(startInd, endInd));
+  }
+
+  matrix = null;
+  pyshell.send(JSON.stringify(setupParams.categories));
+  pyshell.send(JSON.stringify(userArr));
+  userArr = null;
+  pyshell.send(JSON.stringify(productArr));
+  productArr = null;
+  for (let i = 0; i < toSend.length; i += 1) {
+    let obj = JSON.stringify(toSend[i]);
+    pyshell.send(obj);
+    obj = null;
+    toSend[i] = null;
+  }
+  // Received a message sent from the Python script (a simple "print" statement)
+  // pyshell.on('message', (message) => {
+  //   console.log('message: ', message);
+  // });
+
+  // end the input stream and allow the process to exit
+  return new Promise((resolve, reject) => {
+    pyshell.end((err) => {
+      if (err) {
+        reject(err);
+      }
+      resolve();
+    });
+  });
+};
 
 const generateMatrix = () => {
   let users;
@@ -96,56 +141,20 @@ const generateMatrix = () => {
     });
 };
 
-// Spawn python child process that takes in matrix via stdin, generates recs,
-// and adds to mongo and elasticsearch DBs
-const generateRecs = () => {
-  PythonShell.defaultOptions = { scriptPath: __dirname };
-  const path = 'svd.py';
-  const pyshell = new PythonShell(path);
-  const chunking = 5000;
-
-  // Slice array down and send for performance
-  const cuts = Math.ceil(matrix.length / chunking);
-  const toSend = [];
-  const multiplier = setupParams.users / cuts;
-  for (let i = 0; i < cuts; i += 1) {
-    const startInd = Math.floor(multiplier * i);
-    const endInd = Math.floor(multiplier * (i + 1));
-    toSend.push(matrix.slice(startInd, endInd));
-  }
-
-  matrix = null;
-  pyshell.send(JSON.stringify(setupParams.categories));
-  pyshell.send(JSON.stringify(userArr));
-  userArr = null;
-  pyshell.send(JSON.stringify(productArr));
-  productArr = null;
-  for (let i = 0; i < toSend.length; i += 1) {
-    let obj = JSON.stringify(toSend[i]);
-    pyshell.send(obj);
-    obj = null;
-    toSend[i] = null;
-  }
-
-  // Received a message sent from the Python script (a simple "print" statement)
-  // pyshell.on('message', (message) => {
-  //   console.log('message: ', message);
-  // });
-
-  // end the input stream and allow the process to exit
-  pyshell.end((err) => {
-    if (err) {
-      throw err;
-    }
-  });
-};
-
 const populateRecommendations = () => {
-  generateMatrix()
+  // These objects need to be reset each run since the previous run
+  // sets them all to be null for garbage collection
+  userObj = {};
+  userArr = [];
+  productObj = {};
+  productArr = [];
+  matrix = [];
+  return generateMatrix()
     .then(() => (
       generateRecs()
     ));
 };
+
 
 module.exports = {
   populateRecommendations,

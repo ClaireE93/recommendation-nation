@@ -1,0 +1,79 @@
+version: '2.1'
+services:
+  mongo:
+    image: "mongo:latest"
+    ports:
+      - "27017:27017"
+    healthcheck:
+        test: echo 'db.stats().ok' | mongo localhost:27017/recs --quiet
+        interval: 10s
+        timeout: 10s
+        retries: 5
+    logging:
+      driver: none
+    volumes:
+      - "mongodata1:/data/db"
+  postgres:
+    restart: always
+    image: "postgres:9.6"
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: 'mtakano'
+      POSTGRES_PASSWORD: ''
+      POSTGRES_DB: 'purchases'
+    healthcheck:
+        test: ["CMD-SHELL", "pg_isready"]
+        interval: 10s
+        timeout: 10s
+        retries: 5
+    volumes:
+      - "postgresdata1:/var/lib/postgresql/data"
+    logging:
+      driver: none
+  elasticsearch:
+    image: elasticsearch:latest
+    ports:
+      - "9200:9200"
+    logging:
+      driver: none
+    healthcheck:
+        test: ["CMD", "curl", "-silent", "--fail", "http://localhost:9200/_cluster/health"]
+        interval: 5s
+        timeout: 10s
+        retries: 10
+    volumes:
+      - "elasticdata1:/usr/share/elasticsearch/data"
+  kibana:
+    image: kibana:latest
+    ports:
+      - "5601:5601"
+    depends_on: ['elasticsearch']
+    logging:
+      driver: none
+  web:
+    restart: always
+    image: clairee93/recnation:v1
+    # build: .
+    ports:
+     - "80:80"
+    volumes:
+     - .:/app
+    depends_on:
+      postgres:
+          condition: service_healthy
+      mongo:
+          condition: service_healthy
+      elasticsearch:
+          condition: service_healthy
+    environment:
+      MONGO_URL: 'mongo'
+      ELASTIC_HOST: 'elasticsearch'
+      POSTGRES_HOST: 'postgres'
+      POSTGRES_PASSWORD: '123'
+      POSTGRES_DB: 'purchases'
+    # command: ["npm", "start"]
+volumes:
+  elasticdata1:
+  mongodata1:
+  postgresdata1:
